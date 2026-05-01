@@ -9,6 +9,7 @@ import { showContextMenu } from './menuBuilder'
 import { resolveClickThroughUrl } from './clickThroughResolver'
 import { setAutoStart } from './autostart'
 import { openModal } from './modalWindow'
+import { resolveKrStock } from './krStockResolver'
 
 export function registerIpc(opts: {
   config: ConfigStore
@@ -78,6 +79,10 @@ export function registerIpc(opts: {
   })
   ipcMain.on(IPC.ITEM_CANCEL_VALIDATE, () => {
     activeValidate?.abort()
+  })
+
+  ipcMain.handle(IPC.KR_STOCK_RESOLVE, async (_e, query: string) => {
+    return resolveKrStock(query)
   })
 
   ipcMain.on(IPC.DRAG_START, () => wm.beginDrag())

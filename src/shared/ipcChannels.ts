@@ -9,6 +9,8 @@ export const IPC = {
   ITEM_VALIDATE: 'item:validate',
   ITEM_CANCEL_VALIDATE: 'item:cancelValidate',
 
+  KR_STOCK_RESOLVE: 'kr:stockResolve',
+
   DRAG_START: 'drag:start',
   DRAG_MOVE: 'drag:move',
   DRAG_END: 'drag:end',

@@ -25,6 +25,7 @@ export function AddItemModalRoute({ itemId }: Props) {
   return (
     <AddItemModal
       initial={initial}
+      existingItems={config.items}
       templates={config.defaults.clickThroughTemplates}
       onClose={() => window.close()}
       onSubmit={async (draft) => {

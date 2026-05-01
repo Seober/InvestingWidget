@@ -3,6 +3,7 @@ import type { AssetType, ItemConfig } from '@shared/schema'
 
 interface Props {
   initial?: ItemConfig | null
+  existingItems: ItemConfig[]
   onClose: () => void
   onSubmit: (item: Omit<ItemConfig, 'id'> & { id?: string }) => Promise<void>
   templates: Record<string, string>
@@ -16,7 +17,7 @@ const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'stock-kr', label: '한국 주식' }
 ]
 
-export function AddItemModal({ initial, onClose, onSubmit, templates }: Props) {
+export function AddItemModal({ initial, existingItems, onClose, onSubmit, templates }: Props) {
   const [symbol, setSymbol] = useState(initial?.symbol ?? '')
   const [assetType, setAssetType] = useState<AssetType>(initial?.assetType ?? 'crypto-spot')
   const [displayName, setDisplayName] = useState(initial?.displayName ?? '')
@@ -51,7 +52,8 @@ export function AddItemModal({ initial, onClose, onSubmit, templates }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!symbol.trim()) {
+    const rawInput = symbol.trim()
+    if (!rawInput) {
       setError('심볼을 입력하세요.')
       return
     }
@@ -59,11 +61,59 @@ export function AddItemModal({ initial, onClose, onSubmit, templates }: Props) {
     setError(null)
     cancelledRef.current = false
     try {
+      let finalSymbol: string
+      let finalDisplayName = displayName.trim()
+
+      if (assetType === 'stock-kr') {
+        // Naver autocomplete로 종목 존재 검증 + 이름 자동 채움.
+        // 코드/접두사 입력도 동일하게 통과시키되, Naver가 못 찾으면 (일부 코스닥
+        // 코드가 자동완성에 빠져 있는 경우) 사용자 입력을 신뢰. 이름 입력은 엄격 검증.
+        const isCode = /^\d{6}$/.test(rawInput)
+        const prefixedMatch = /^(KRX|KOSDAQ|KOSPI|KONEX):(\d{6})$/i.exec(rawInput)
+        const isPrefixed = !!prefixedMatch
+        const queryForResolve = prefixedMatch ? prefixedMatch[2] : rawInput
+        const match = await window.api.kr.resolve(queryForResolve)
+        if (cancelledRef.current) return
+        if (match) {
+          // KOSPI는 toTVSymbol이 KRX: 접두사를 자동 추가하므로 코드만 저장.
+          // 그 외 시장(KOSDAQ/KONEX)은 명시적으로 접두사 포함해야 TradingView 인식.
+          finalSymbol =
+            match.market === 'KOSPI' ? match.code : `${match.market}:${match.code}`
+          if (!finalDisplayName) finalDisplayName = match.name
+        } else if (isCode || isPrefixed) {
+          // Naver는 못 찾았지만 사용자가 코드 형식으로 명시 → 신뢰.
+          finalSymbol = rawInput.toUpperCase()
+        } else {
+          throw new Error(`'${rawInput}'에 해당하는 종목을 찾지 못했습니다`)
+        }
+      } else {
+        finalSymbol = rawInput.toUpperCase()
+      }
+
+      // 중복 등록 차단 — 같은 자산유형·심볼·(crypto면 quote)이면 거부.
+      // 편집 모드에서는 자기 자신은 제외.
+      const normalizedFinalSymbol = finalSymbol.toUpperCase()
+      const normalizedQuote = isCrypto ? quoteCurrency.trim().toUpperCase() : ''
+      const dup = existingItems.find((other) => {
+        if (initial?.id && other.id === initial.id) return false
+        if (other.assetType !== assetType) return false
+        if ((other.symbol ?? '').toUpperCase() !== normalizedFinalSymbol) return false
+        if (isCrypto) {
+          const otherQuote = (other.quoteCurrency ?? 'USDT').toUpperCase()
+          if (otherQuote !== normalizedQuote) return false
+        }
+        return true
+      })
+      if (dup) {
+        const dupLabel = dup.displayName?.trim() || dup.symbol
+        throw new Error(`이미 등록한 종목입니다: ${dupLabel}`)
+      }
+
       await onSubmit({
         id: initial?.id,
-        symbol: symbol.trim().toUpperCase(),
+        symbol: finalSymbol,
         assetType,
-        displayName: displayName.trim() || undefined,
+        displayName: finalDisplayName || undefined,
         quoteCurrency: isCrypto ? quoteCurrency.trim().toUpperCase() : undefined,
         clickThroughUrl: clickThroughUrl.trim() || undefined
       })
@@ -124,7 +174,7 @@ export function AddItemModal({ initial, onClose, onSubmit, templates }: Props) {
             onChange={(e) => setSymbol(e.target.value)}
             placeholder={
               assetType === 'stock-kr'
-                ? '예: 005930 또는 KOSDAQ:091990'
+                ? '예: 005930 · 삼성전자 · KOSDAQ:091990'
                 : isCrypto
                   ? '예: BTC'
                   : '예: AAPL'

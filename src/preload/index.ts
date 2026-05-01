@@ -29,6 +29,12 @@ const api = {
       ipcRenderer.invoke(IPC.ITEM_VALIDATE, draft),
     cancelValidate: () => ipcRenderer.send(IPC.ITEM_CANCEL_VALIDATE)
   },
+  kr: {
+    resolve: (
+      query: string
+    ): Promise<{ code: string; name: string; market: string } | null> =>
+      ipcRenderer.invoke(IPC.KR_STOCK_RESOLVE, query)
+  },
   drag: {
     start: () => ipcRenderer.send(IPC.DRAG_START),
     move: () => ipcRenderer.send(IPC.DRAG_MOVE),

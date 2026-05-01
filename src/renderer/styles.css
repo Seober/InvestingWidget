@@ -268,6 +268,18 @@ body.modal-window .modal {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+/* Native <select> 펼침 팝업이 OS 기본 흰색으로 떠서 다크 모달과 안 맞음 → 옵션 색 다크화.
+   Chromium은 <option>의 배경/글자색을 native popup에 적용하지만 OS 버전에 따라
+   하이라이트·테두리 색은 시스템 기본 유지될 수 있음. */
+.modal select option {
+  background: #111418;
+  color: #e5e7eb;
+}
+.app.theme-light .modal select option {
+  background: #fff;
+  color: #111;
+}
+
 .modal input[type='range'] {
   padding: 0;
 }

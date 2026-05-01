@@ -1,0 +1,18 @@
+appId: com.leejun51.investingwidget
+productName: InvestingWidget
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+  - "!**/{.DS_Store,*.map}"
+asar: true
+win:
+  signAndEditExecutable: false
+  target:
+    - target: zip
+      arch:
+        - x64
+  # icon: resources/icon.ico  # 실제 ico 파일을 넣고 주석 해제하세요
+publish: null

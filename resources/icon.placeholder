@@ -1,0 +1,5 @@
+아이콘 자리표시자입니다. 실제 빌드 전에 256x256 (또는 멀티 사이즈) icon.ico 파일로 교체하세요.
+- icon.ico (Windows 패키지/창 아이콘)
+- tray.png (시스템 트레이 아이콘, Phase 2)
+
+ICO 생성 도구: https://convertio.co/png-ico/ 또는 ImageMagick: `convert icon.png -define icon:auto-resize=256,128,64,48,32,16 icon.ico`

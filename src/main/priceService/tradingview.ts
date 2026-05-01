@@ -3,7 +3,7 @@ import { AdapterStatus, ItemConfig } from '@shared/schema'
 import { PriceAdapter } from './types'
 
 interface TVMarketHandle {
-  delete: () => void
+  close: () => void
   onData: (cb: (data: any) => void) => void
   onLoaded?: (cb: () => void) => void
   onError?: (cb: (err: any) => void) => void
@@ -88,17 +88,33 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   }
 
   private wireMarketHandlers(itemId: string, tvSymbol: string, market: TVMarketHandle) {
+    // `loaded` event = subscription registered on TV side. Mark lastTickTs
+    // so the recovery timer doesn't keep recreating the market while waiting
+    // for the first qsd packet (which can take a few seconds, especially
+    // outside KR market hours).
+    market.onLoaded?.(() => {
+      if (!this.lastTickTs.has(itemId)) {
+        this.lastTickTs.set(itemId, Date.now())
+      }
+    })
     market.onData((data: any) => {
-      const price = Number(data?.lp)
-      const changePct = Number(data?.chp)
-      if (!Number.isFinite(price)) return
-      const finalChange = Number.isFinite(changePct) ? changePct : 0
-      this.lastData.set(itemId, { price, changePct: finalChange })
+      // TV pushes partial updates: e.g., volume-only or chp-only frames
+      // without `lp`. Merge with cached values so we still emit a sensible
+      // tick instead of dropping the update.
+      const lpRaw = Number(data?.lp)
+      const chpRaw = Number(data?.chp)
+      const cached = this.lastData.get(itemId)
+      let price: number
+      if (Number.isFinite(lpRaw)) price = lpRaw
+      else if (cached !== undefined) price = cached.price
+      else return
+      const changePct = Number.isFinite(chpRaw) ? chpRaw : (cached?.changePct ?? 0)
+      this.lastData.set(itemId, { price, changePct })
       this.lastTickTs.set(itemId, Date.now())
       this.emit('tick', itemId, {
         symbol: tvSymbol,
         price,
-        changePct: finalChange,
+        changePct,
         ts: Date.now()
       })
     })
@@ -111,7 +127,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     const handle = this.itemHandles.get(itemId)
     if (!handle || !this.session) return
     try {
-      handle.market.delete()
+      handle.market.close()
     } catch {
       // ignore
     }
@@ -152,7 +168,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     const h = this.itemHandles.get(itemId)
     if (!h) return
     try {
-      h.market.delete()
+      h.market.close()
     } catch {
       // ignore
     }

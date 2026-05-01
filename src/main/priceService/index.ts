@@ -125,6 +125,14 @@ export class PriceService extends EventEmitter {
             : '지원하지 않는 자산 유형입니다.'
       }
     }
+    // @mathieuc/tradingview 라이브러리에 알려진 버그: validate 단계에서 임시 Market을
+    // 만들었다 close하면 symbolListeners 배열의 length가 줄지 않아 (delete 슬롯만)
+    // 같은 session 내 다음 Market 생성 시 quote_add_symbols가 전송되지 않음 →
+    // 두 번째 한국 주식부터 영구 stuck. 검증은 이미 renderer가 Naver로 처리하므로
+    // tryAdapter를 우회하고 실제 구독에서만 1회 Market을 만들도록 함.
+    if (itemDraft.assetType === 'stock-kr' && chain[0].id === 'tradingview') {
+      return { ok: true, source: 'tradingview' }
+    }
     const errors: string[] = []
     for (const adapter of chain) {
       if (signal?.aborted) return { ok: false, error: '취소됨' }

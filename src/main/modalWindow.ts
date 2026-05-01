@@ -1,5 +1,6 @@
 import { BrowserWindow, screen } from 'electron'
 import { join } from 'node:path'
+import { iconPath } from './iconPath'
 
 export type ModalKind = 'add-item' | 'edit-item' | 'settings' | 'list-edit'
 
@@ -47,6 +48,7 @@ export function openModal(opts: {
     maximizable: false,
     autoHideMenuBar: true,
     backgroundColor: '#111418',
+    icon: iconPath(),
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

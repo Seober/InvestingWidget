@@ -1,5 +1,10 @@
 appId: com.leejun51.investingwidget
 productName: InvestingWidget
+# Task Manager의 "이름" 컬럼은 exe VersionInfo의 FileDescription을 표시.
+# electron-builder는 기본적으로 package.json의 description을 FileDescription으로 박음
+# → extraMetadata로 빌드 시점에만 짧은 이름으로 덮어씀 (npm 메타데이터 description은 그대로 유지).
+extraMetadata:
+  description: InvestingWidget
 directories:
   output: release
   buildResources: resources
@@ -7,12 +12,16 @@ files:
   - out/**/*
   - package.json
   - "!**/{.DS_Store,*.map}"
+# extraResources는 asar 외부의 런타임 리소스. process.resourcesPath/icon.ico 로 접근.
+# BrowserWindow({icon}) 가 실행 중일 때 작업표시줄·Alt+Tab 아이콘으로 사용.
+extraResources:
+  - from: resources/icon.ico
+    to: icon.ico
 asar: true
 win:
-  signAndEditExecutable: false
+  icon: resources/icon.ico
   target:
     - target: zip
       arch:
         - x64
-  # icon: resources/icon.ico  # 실제 ico 파일을 넣고 주석 해제하세요
 publish: null

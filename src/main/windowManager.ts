@@ -1,6 +1,7 @@
 import { BrowserWindow, screen } from 'electron'
 import { join } from 'node:path'
 import { ConfigStore } from './configStore'
+import { iconPath } from './iconPath'
 
 export class WindowManager {
   private win: BrowserWindow | null = null
@@ -32,6 +33,7 @@ export class WindowManager {
       hasShadow: false,
       skipTaskbar: false,
       backgroundColor: '#00000000',
+      icon: iconPath(),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         contextIsolation: true,

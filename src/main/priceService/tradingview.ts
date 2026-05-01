@@ -24,6 +24,11 @@ interface TVModule {
   Client: new () => TVClient
 }
 
+// Self-healing recovery: only recreates market handles that have NEVER
+// received a tick. Items that received a tick but went silent (off-hours, KR
+// market closed) are left alone — the last quote stays visible.
+const RECOVERY_CHECK_MS = 30_000
+
 export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   readonly id = 'tradingview' as const
   private currentStatus: AdapterStatus = 'closed'
@@ -35,6 +40,9 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   private itemHandles = new Map<string, { tvSymbol: string; market: TVMarketHandle }>()
   // Latest data per item for re-emit on subscribe
   private lastData = new Map<string, { price: number; changePct: number }>()
+  // itemId -> last tick timestamp; missing means "never received a tick"
+  private lastTickTs = new Map<string, number>()
+  private recoveryTimer: NodeJS.Timeout | null = null
   private destroyed = false
 
   async initIfNeeded() {
@@ -74,13 +82,20 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       return
     }
 
+    this.wireMarketHandlers(item.id, tvSymbol, market)
+    this.itemHandles.set(item.id, { tvSymbol, market })
+    this.ensureRecoveryTimer()
+  }
+
+  private wireMarketHandlers(itemId: string, tvSymbol: string, market: TVMarketHandle) {
     market.onData((data: any) => {
       const price = Number(data?.lp)
       const changePct = Number(data?.chp)
       if (!Number.isFinite(price)) return
       const finalChange = Number.isFinite(changePct) ? changePct : 0
-      this.lastData.set(item.id, { price, changePct: finalChange })
-      this.emit('tick', item.id, {
+      this.lastData.set(itemId, { price, changePct: finalChange })
+      this.lastTickTs.set(itemId, Date.now())
+      this.emit('tick', itemId, {
         symbol: tvSymbol,
         price,
         changePct: finalChange,
@@ -88,10 +103,49 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       })
     })
     market.onError?.((err: any) => {
-      this.emit('itemError', item.id, `TradingView 오류: ${err?.message ?? String(err)}`)
+      this.emit('itemError', itemId, `TradingView 오류: ${err?.message ?? String(err)}`)
     })
+  }
 
-    this.itemHandles.set(item.id, { tvSymbol, market })
+  private recreateMarket(itemId: string) {
+    const handle = this.itemHandles.get(itemId)
+    if (!handle || !this.session) return
+    try {
+      handle.market.delete()
+    } catch {
+      // ignore
+    }
+    let market: TVMarketHandle
+    try {
+      market = new this.session.Market(handle.tvSymbol)
+    } catch (err: any) {
+      this.emit('itemError', itemId, `TradingView 재구독 실패: ${err?.message ?? err}`)
+      return
+    }
+    this.wireMarketHandlers(itemId, handle.tvSymbol, market)
+    this.itemHandles.set(itemId, { tvSymbol: handle.tvSymbol, market })
+  }
+
+  private ensureRecoveryTimer() {
+    if (this.recoveryTimer) return
+    this.recoveryTimer = setInterval(() => {
+      const pending: string[] = []
+      for (const itemId of this.itemHandles.keys()) {
+        if (!this.lastTickTs.has(itemId)) pending.push(itemId)
+      }
+      if (pending.length === 0) {
+        this.stopRecoveryTimer()
+        return
+      }
+      for (const itemId of pending) this.recreateMarket(itemId)
+    }, RECOVERY_CHECK_MS)
+  }
+
+  private stopRecoveryTimer() {
+    if (this.recoveryTimer) {
+      clearInterval(this.recoveryTimer)
+      this.recoveryTimer = null
+    }
   }
 
   unsubscribe(itemId: string) {
@@ -104,7 +158,9 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     }
     this.itemHandles.delete(itemId)
     this.lastData.delete(itemId)
+    this.lastTickTs.delete(itemId)
     if (this.itemHandles.size === 0) {
+      this.stopRecoveryTimer()
       this.teardownSession()
     }
   }
@@ -115,6 +171,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
 
   async destroy() {
     this.destroyed = true
+    this.stopRecoveryTimer()
     for (const itemId of Array.from(this.itemHandles.keys())) this.unsubscribe(itemId)
     this.teardownSession()
   }

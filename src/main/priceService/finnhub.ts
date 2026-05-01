@@ -8,6 +8,11 @@ const QUOTE_URL = 'https://finnhub.io/api/v1/quote'
 const PC_REFRESH_MS = 6 * 60 * 60 * 1000 // 6 hours
 const RECONNECT_INITIAL_MS = 1000
 const RECONNECT_MAX_MS = 30_000
+// Self-healing recovery: only fires for symbols that have not received any
+// tick yet. Stocks intentionally skip polling once a tick is in — off-hours
+// silence is correct behavior (the last close stays on screen) and polling
+// would just burn the 60 calls/min Finnhub free quota.
+const RECOVERY_CHECK_MS = 30_000
 
 interface PrevClose {
   pc: number
@@ -31,8 +36,12 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
   private prevCloseCache = new Map<string, PrevClose>()
   // symbol -> latest price (so we can re-emit when pc updates)
   private lastPrice = new Map<string, number>()
+  // symbol -> last tick timestamp (REST or WS)
+  private lastTickTs = new Map<string, number>()
   // periodic pc refresh
   private pcRefreshTimer: NodeJS.Timeout | null = null
+  // recovery timer; runs only while there are still pending (no-tick) symbols
+  private recoveryTimer: NodeJS.Timeout | null = null
 
   constructor(apiKey: string) {
     super()
@@ -78,6 +87,7 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
       }
     }
     this.ensurePcRefreshTimer()
+    this.ensureRecoveryTimer()
   }
 
   unsubscribe(itemId: string) {
@@ -91,12 +101,14 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
         this.symbolToItems.delete(symbol)
         this.lastPrice.delete(symbol)
         this.prevCloseCache.delete(symbol)
+        this.lastTickTs.delete(symbol)
         this.sendUnsubscribe(symbol)
       }
     }
     if (this.symbolToItems.size === 0) {
       this.closeWs()
       this.stopPcRefreshTimer()
+      this.stopRecoveryTimer()
     }
   }
 
@@ -111,6 +123,7 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
       this.reconnectTimer = null
     }
     this.stopPcRefreshTimer()
+    this.stopRecoveryTimer()
     this.closeWs()
   }
 
@@ -126,6 +139,9 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
       this.reconnectDelayMs = RECONNECT_INITIAL_MS
       for (const sym of this.symbolToItems.keys()) {
         this.sendSubscribe(sym)
+        // After (re)connect, refetch /quote so the UI shows a fresh tick even
+        // if the market is closed and WS will stay silent.
+        void this.fetchPrevClose(sym)
       }
     })
 
@@ -165,6 +181,7 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
     }
     for (const [sym, price] of latestPerSymbol) {
       this.lastPrice.set(sym, price)
+      this.lastTickTs.set(sym, ts)
       const items = this.symbolToItems.get(sym)
       if (!items) continue
       const cached = this.prevCloseCache.get(sym)
@@ -195,6 +212,7 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
       const initialPrice = Number.isFinite(c) && c > 0 ? c : this.lastPrice.get(symbol)
       if (initialPrice !== undefined) {
         if (Number.isFinite(c) && c > 0) this.lastPrice.set(symbol, c)
+        this.lastTickTs.set(symbol, Date.now())
         const items = this.symbolToItems.get(symbol)
         if (items) {
           for (const itemId of items) {
@@ -202,8 +220,30 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
           }
         }
       }
-    } catch {
-      // network error — will retry on next refresh
+    } catch (err: any) {
+      console.warn(`[finnhub] /quote ${symbol} threw:`, err?.message ?? err)
+    }
+  }
+
+  private ensureRecoveryTimer() {
+    if (this.recoveryTimer) return
+    this.recoveryTimer = setInterval(() => {
+      const pending: string[] = []
+      for (const sym of this.symbolToItems.keys()) {
+        if (!this.lastTickTs.has(sym)) pending.push(sym)
+      }
+      if (pending.length === 0) {
+        this.stopRecoveryTimer()
+        return
+      }
+      for (const sym of pending) void this.fetchPrevClose(sym)
+    }, RECOVERY_CHECK_MS)
+  }
+
+  private stopRecoveryTimer() {
+    if (this.recoveryTimer) {
+      clearInterval(this.recoveryTimer)
+      this.recoveryTimer = null
     }
   }
 

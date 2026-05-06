@@ -34,7 +34,8 @@ export function AddItemModalRoute({ itemId }: Props) {
           assetType: draft.assetType,
           displayName: draft.displayName,
           quoteCurrency: draft.quoteCurrency,
-          clickThroughUrl: draft.clickThroughUrl
+          clickThroughUrl: draft.clickThroughUrl,
+          source: draft.source // 자동완성 픽에서 온 어댑터 힌트 — validate가 이 어댑터부터 시도
         })
         if (!validation.ok) {
           throw new Error(validation.error ?? '시세를 받을 수 없습니다.')

@@ -8,7 +8,7 @@ test('default config has 0.5s refresh interval', () => {
 })
 
 test('default config has all asset-type click-through templates', () => {
-  const types = ['crypto-spot', 'crypto-perp', 'stock-us', 'etf-us', 'stock-kr'] as const
+  const types = ['crypto-spot', 'crypto-perp', 'stock-us', 'etf-us', 'stock-kr', 'etf-kr'] as const
   for (const t of types) {
     const tpl = DEFAULT_CONFIG.defaults.clickThroughTemplates[t]
     assert.ok(tpl && tpl.length > 0, `missing template for ${t}`)
@@ -29,6 +29,7 @@ test('adapterFor maps each asset type to expected adapter', () => {
   assert.equal(adapterFor('stock-us'), 'finnhub')
   assert.equal(adapterFor('etf-us'), 'finnhub')
   assert.equal(adapterFor('stock-kr'), 'tradingview')
+  assert.equal(adapterFor('etf-kr'), 'tradingview')
 })
 
 test('default initial window opacity sits inside bounds', () => {

@@ -89,7 +89,7 @@ export function App() {
           const t = ticks[item.id]
           const needsApiKey =
             (item.assetType === 'stock-us' || item.assetType === 'etf-us') && !config.finnhubApiKey
-          const isExperimental = item.assetType === 'stock-kr'
+          const isExperimental = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
           return (
             <ItemRow
               key={item.id}

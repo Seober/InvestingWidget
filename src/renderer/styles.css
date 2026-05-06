@@ -268,6 +268,92 @@ body.modal-window .modal {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+/* Symbol autocomplete (custom combobox) */
+.autocomplete {
+  position: relative;
+  display: flex;
+}
+
+.autocomplete > input {
+  flex: 1;
+  /* .modal input 스타일 상속 — 별도 지정 없으면 부모 select와 동일 다크 톤 */
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #1a1d23;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  font-size: 0.9em;
+}
+
+.autocomplete-dropdown li {
+  padding: 6px 10px;
+  display: grid;
+  grid-template-columns: minmax(70px, auto) 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.autocomplete-dropdown li.highlighted,
+.autocomplete-dropdown li:hover {
+  background: rgba(37, 99, 235, 0.28);
+}
+
+.autocomplete-symbol {
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  color: #e5e7eb;
+}
+
+.autocomplete-name {
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-market {
+  color: #6b7280;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.autocomplete-empty,
+.autocomplete-loading {
+  padding: 8px 10px;
+  color: #6b7280;
+  font-size: 0.9em;
+  cursor: default;
+}
+
+.app.theme-light .autocomplete-dropdown {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+.app.theme-light .autocomplete-dropdown li.highlighted,
+.app.theme-light .autocomplete-dropdown li:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+.app.theme-light .autocomplete-symbol {
+  color: #111;
+}
+.app.theme-light .autocomplete-name {
+  color: #4b5563;
+}
+
 /* Native <select> 펼침 팝업이 OS 기본 흰색으로 떠서 다크 모달과 안 맞음 → 옵션 색 다크화.
    Chromium은 <option>의 배경/글자색을 native popup에 적용하지만 OS 버전에 따라
    하이라이트·테두리 색은 시스템 기본 유지될 수 있음. */

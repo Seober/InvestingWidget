@@ -57,6 +57,7 @@ export class PriceService extends EventEmitter {
       case 'etf-us':
         return [this.finnhub]
       case 'stock-kr':
+      case 'etf-kr':
         return this.tradingViewEnabled ? [this.tv] : []
       default:
         return []
@@ -106,7 +107,7 @@ export class PriceService extends EventEmitter {
     this.tradingViewEnabled = enabled
     if (!enabled) {
       for (const [id, t] of this.itemTypes) {
-        if (t === 'stock-kr') this.unsubscribeItem(id)
+        if (t === 'stock-kr' || t === 'etf-kr') this.unsubscribeItem(id)
       }
     }
   }
@@ -117,12 +118,13 @@ export class PriceService extends EventEmitter {
   ): Promise<ValidateResult> {
     const chain = this.adapterChain(itemDraft.assetType)
     if (chain.length === 0) {
+      const isKr =
+        itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr'
       return {
         ok: false,
-        error:
-          itemDraft.assetType === 'stock-kr'
-            ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
-            : '지원하지 않는 자산 유형입니다.'
+        error: isKr
+          ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
+          : '지원하지 않는 자산 유형입니다.'
       }
     }
     // @mathieuc/tradingview 라이브러리에 알려진 버그: validate 단계에서 임시 Market을
@@ -130,11 +132,21 @@ export class PriceService extends EventEmitter {
     // 같은 session 내 다음 Market 생성 시 quote_add_symbols가 전송되지 않음 →
     // 두 번째 한국 주식부터 영구 stuck. 검증은 이미 renderer가 Naver로 처리하므로
     // tryAdapter를 우회하고 실제 구독에서만 1회 Market을 만들도록 함.
-    if (itemDraft.assetType === 'stock-kr' && chain[0].id === 'tradingview') {
+    if (
+      (itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr') &&
+      chain[0].id === 'tradingview'
+    ) {
       return { ok: true, source: 'tradingview' }
     }
+    // 자동완성 픽이 source 힌트를 줬으면 그 어댑터를 chain 맨 앞으로 — NUMI 같은 단일 거래소
+    // 토큰이 첫 어댑터(예: Binance)의 timeout을 기다리지 않고 즉시 검증.
+    let attempts = chain
+    if (itemDraft.source) {
+      const hinted = chain.find((a) => a.id === itemDraft.source)
+      if (hinted) attempts = [hinted, ...chain.filter((a) => a !== hinted)]
+    }
     const errors: string[] = []
-    for (const adapter of chain) {
+    for (const adapter of attempts) {
       if (signal?.aborted) return { ok: false, error: '취소됨' }
       const result = await this.tryAdapter(adapter, itemDraft, FALLBACK_TIMEOUT_MS, signal)
       if (result.ok) {
@@ -215,10 +227,11 @@ export class PriceService extends EventEmitter {
   private subscribeItem(item: ItemConfig) {
     const adapter = this.resolveAdapter(item)
     if (!adapter) {
+      const isKr = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
       this.emit(
         'itemError',
         item.id,
-        item.assetType === 'stock-kr'
+        isKr
           ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
           : '지원하지 않는 자산 유형입니다.'
       )

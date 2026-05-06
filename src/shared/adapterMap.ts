@@ -12,6 +12,7 @@ export function adapterFor(assetType: AssetType): AdapterId | null {
     case 'etf-us':
       return 'finnhub'
     case 'stock-kr':
+    case 'etf-kr':
       return 'tradingview'
     default:
       return null

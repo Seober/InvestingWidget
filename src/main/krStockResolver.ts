@@ -15,8 +15,10 @@ export interface KrStockMatch {
 }
 
 function parseMatch(it: any): KrStockMatch | null {
-  const code = String(it?.code ?? '')
-  if (!/^\d{6}$/.test(code)) return null
+  const code = String(it?.code ?? '').toUpperCase()
+  // 6자리 코드 — 순수 숫자(005930) 또는 영숫자 혼합(0023A0, 0167A0 등 신규 ETF).
+  // KRX가 2024년경 도입한 알파벳 포함 코드 대응.
+  if (!/^[0-9A-Z]{6}$/.test(code)) return null
   const typeName = String(it?.typeName ?? it?.marketName ?? '')
   let market: KrMarket = 'KRX'
   if (/KOSDAQ|코스닥/i.test(typeName)) market = 'KOSDAQ'
@@ -26,9 +28,12 @@ function parseMatch(it: any): KrStockMatch | null {
   return { code, name, market }
 }
 
-export async function resolveKrStock(query: string): Promise<KrStockMatch | null> {
+export async function searchKrStock(
+  query: string,
+  limit: number = 10
+): Promise<KrStockMatch[]> {
   const trimmed = query.trim()
-  if (!trimmed) return null
+  if (!trimmed) return []
 
   const url = `${NAVER_AC_URL}?q=${encodeURIComponent(trimmed)}&target=stock`
   let res: Response
@@ -41,11 +46,11 @@ export async function resolveKrStock(query: string): Promise<KrStockMatch | null
     })
   } catch (err: any) {
     console.warn(`[kr-resolver] network error for "${trimmed}":`, err?.message ?? err)
-    return null
+    return []
   }
   if (!res.ok) {
     console.warn(`[kr-resolver] HTTP ${res.status} for "${trimmed}"`)
-    return null
+    return []
   }
 
   let data: any
@@ -53,7 +58,7 @@ export async function resolveKrStock(query: string): Promise<KrStockMatch | null
     data = await res.json()
   } catch {
     console.warn(`[kr-resolver] JSON parse failed for "${trimmed}"`)
-    return null
+    return []
   }
 
   // Response shape variations: items can be flat array or [array]
@@ -63,9 +68,20 @@ export async function resolveKrStock(query: string): Promise<KrStockMatch | null
     if (items.length > 0 && Array.isArray(items[0])) items = items[0]
   }
 
+  const out: KrStockMatch[] = []
+  const seen = new Set<string>()
   for (const it of items) {
     const m = parseMatch(it)
-    if (m) return m
+    if (!m) continue
+    if (seen.has(m.code)) continue
+    seen.add(m.code)
+    out.push(m)
+    if (out.length >= limit) break
   }
-  return null
+  return out
+}
+
+export async function resolveKrStock(query: string): Promise<KrStockMatch | null> {
+  const matches = await searchKrStock(query, 1)
+  return matches[0] ?? null
 }

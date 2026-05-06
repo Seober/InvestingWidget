@@ -69,6 +69,16 @@ export class GateioAdapter extends EventEmitter implements PriceAdapter {
       const res = await fetch(this.cfg.restTickerUrl(symbol))
       if (!res.ok) {
         console.warn(`[${this.id}] REST ${symbol} failed: HTTP ${res.status}`)
+        // Gate.io는 invalid currency pair에 HTTP 400 반환 → 즉시 itemError emit해서
+        // validate의 5초 timeout 회피.
+        if (res.status === 400) {
+          const items = this.symbolToItems.get(symbol)
+          if (items) {
+            for (const itemId of items) {
+              this.emit('itemError', itemId, `${this.id}에 없는 심볼입니다`)
+            }
+          }
+        }
         return
       }
       const data = (await res.json()) as any

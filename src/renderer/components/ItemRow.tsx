@@ -35,6 +35,7 @@ function formatPrice(price: number, assetType: ItemConfig['assetType']): string 
 function currencyPrefix(assetType: ItemConfig['assetType']): string {
   switch (assetType) {
     case 'stock-kr':
+    case 'etf-kr':
       return '₩'
     case 'stock-us':
     case 'etf-us':

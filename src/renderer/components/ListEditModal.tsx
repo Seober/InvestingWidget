@@ -6,7 +6,8 @@ const ASSET_LABELS: Record<AssetType, string> = {
   'crypto-perp': '선물',
   'stock-us': '미국주식',
   'etf-us': '미국ETF',
-  'stock-kr': '한국주식'
+  'stock-kr': '한국주식',
+  'etf-kr': '한국ETF'
 }
 
 interface Props {

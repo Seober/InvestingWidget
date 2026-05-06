@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { AssetType, ItemConfig } from '@shared/schema'
+import type { AssetType, ItemConfig, SourceId, SymbolSuggestion } from '@shared/schema'
+import { SymbolAutocomplete } from './SymbolAutocomplete'
 
 interface Props {
   initial?: ItemConfig | null
@@ -14,7 +15,8 @@ const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'crypto-perp', label: '암호화폐 선물 (USDT-M)' },
   { value: 'stock-us', label: '미국 주식' },
   { value: 'etf-us', label: '미국 ETF' },
-  { value: 'stock-kr', label: '한국 주식' }
+  { value: 'stock-kr', label: '한국 주식' },
+  { value: 'etf-kr', label: '한국 ETF' }
 ]
 
 export function AddItemModal({ initial, existingItems, onClose, onSubmit, templates }: Props) {
@@ -25,9 +27,22 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
   const [clickThroughUrl, setClickThroughUrl] = useState(initial?.clickThroughUrl ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // 자동완성에서 선택된 항목의 어댑터 힌트 — validate 시 우선 시도해 NUMI 같은 단일 거래소 토큰 지연 회피.
+  // 사용자가 픽 후 직접 타이핑하면 무효화 (잘못된 힌트 방지).
+  const [pickedSource, setPickedSource] = useState<SourceId | undefined>(initial?.source)
   const cancelledRef = useRef(false)
 
   useEffect(() => setError(null), [symbol, assetType])
+
+  // 자산 유형이 바뀌면 심볼·표시이름·source 힌트 초기화. 최초 마운트(편집 모드 포함)는 건너뜀.
+  const prevAssetTypeRef = useRef(assetType)
+  useEffect(() => {
+    if (assetType === prevAssetTypeRef.current) return
+    prevAssetTypeRef.current = assetType
+    setSymbol('')
+    setDisplayName('')
+    setPickedSource(undefined)
+  }, [assetType])
 
   // Document-level Esc: cancel during validation, close otherwise.
   useEffect(() => {
@@ -64,12 +79,13 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
       let finalSymbol: string
       let finalDisplayName = displayName.trim()
 
-      if (assetType === 'stock-kr') {
-        // Naver autocomplete로 종목 존재 검증 + 이름 자동 채움.
+      if (assetType === 'stock-kr' || assetType === 'etf-kr') {
+        // Naver autocomplete로 종목 존재 검증 + 이름 자동 채움 (한국 주식·ETF 동일).
         // 코드/접두사 입력도 동일하게 통과시키되, Naver가 못 찾으면 (일부 코스닥
         // 코드가 자동완성에 빠져 있는 경우) 사용자 입력을 신뢰. 이름 입력은 엄격 검증.
-        const isCode = /^\d{6}$/.test(rawInput)
-        const prefixedMatch = /^(KRX|KOSDAQ|KOSPI|KONEX):(\d{6})$/i.exec(rawInput)
+        // 6자리 코드 — 순수 숫자(005930) 또는 영숫자 혼합(0023A0, 0167A0 등 신규 ETF).
+        const isCode = /^[0-9A-Z]{6}$/i.test(rawInput)
+        const prefixedMatch = /^(KRX|KOSDAQ|KOSPI|KONEX):([0-9A-Z]{6})$/i.exec(rawInput)
         const isPrefixed = !!prefixedMatch
         const queryForResolve = prefixedMatch ? prefixedMatch[2] : rawInput
         const match = await window.api.kr.resolve(queryForResolve)
@@ -115,7 +131,8 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
         assetType,
         displayName: finalDisplayName || undefined,
         quoteCurrency: isCrypto ? quoteCurrency.trim().toUpperCase() : undefined,
-        clickThroughUrl: clickThroughUrl.trim() || undefined
+        clickThroughUrl: clickThroughUrl.trim() || undefined,
+        source: pickedSource
       })
       if (!cancelledRef.current) onClose()
     } catch (err: any) {
@@ -169,18 +186,32 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
 
         <label>
           심볼
-          <input
+          <SymbolAutocomplete
+            assetType={assetType}
+            quoteCurrency={isCrypto ? quoteCurrency : undefined}
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
+            onChange={(v) => {
+              setSymbol(v)
+              // 사용자가 직접 입력 → 이전 자동완성 픽의 source 힌트 무효화
+              setPickedSource(undefined)
+            }}
+            onSelect={(s: SymbolSuggestion) => {
+              // KOSDAQ/KONEX는 storeAs로 prefix 포함 형태 저장. 그 외는 symbol 그대로.
+              setSymbol(s.storeAs ?? s.symbol)
+              if (!displayName.trim()) setDisplayName(s.name)
+              setPickedSource(s.source)
+            }}
+            disabled={submitting}
+            autoFocus
             placeholder={
               assetType === 'stock-kr'
                 ? '예: 005930 · 삼성전자 · KOSDAQ:091990'
-                : isCrypto
-                  ? '예: BTC'
-                  : '예: AAPL'
+                : assetType === 'etf-kr'
+                  ? '예: 069500 · KODEX 200 · 305720'
+                  : isCrypto
+                    ? '예: BTC · Bitcoin'
+                    : '예: AAPL · Apple'
             }
-            disabled={submitting}
-            autoFocus
           />
         </label>
 

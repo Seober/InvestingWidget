@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipcChannels'
-import type { AppConfig, ItemConfig, Tick, ValidateResult } from '@shared/schema'
+import type {
+  AppConfig,
+  AssetType,
+  ItemConfig,
+  SymbolSuggestion,
+  Tick,
+  ValidateResult
+} from '@shared/schema'
 
 type StatusEvent =
   | { itemId: string; status: 'closed'; message?: string }
@@ -34,6 +41,13 @@ const api = {
       query: string
     ): Promise<{ code: string; name: string; market: string } | null> =>
       ipcRenderer.invoke(IPC.KR_STOCK_RESOLVE, query)
+  },
+  symbols: {
+    search: (params: {
+      assetType: AssetType
+      query: string
+      quoteCurrency?: string
+    }): Promise<SymbolSuggestion[]> => ipcRenderer.invoke(IPC.SYMBOL_SEARCH, params)
   },
   drag: {
     start: () => ipcRenderer.send(IPC.DRAG_START),

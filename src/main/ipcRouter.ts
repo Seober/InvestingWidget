@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { AppConfig, ItemConfig, Tick } from '@shared/schema'
+import { AppConfig, AssetType, ItemConfig, Tick } from '@shared/schema'
 import { IPC } from '@shared/ipcChannels'
 import { ConfigStore } from './configStore'
 import { WindowManager } from './windowManager'
@@ -10,6 +10,7 @@ import { resolveClickThroughUrl } from './clickThroughResolver'
 import { setAutoStart } from './autostart'
 import { openModal } from './modalWindow'
 import { resolveKrStock } from './krStockResolver'
+import { searchSymbols } from './symbolSearch'
 
 export function registerIpc(opts: {
   config: ConfigStore
@@ -84,6 +85,16 @@ export function registerIpc(opts: {
   ipcMain.handle(IPC.KR_STOCK_RESOLVE, async (_e, query: string) => {
     return resolveKrStock(query)
   })
+
+  ipcMain.handle(
+    IPC.SYMBOL_SEARCH,
+    async (
+      _e,
+      params: { assetType: AssetType; query: string; quoteCurrency?: string }
+    ) => {
+      return searchSymbols(params.assetType, params.query, params.quoteCurrency)
+    }
+  )
 
   ipcMain.on(IPC.DRAG_START, () => wm.beginDrag())
   ipcMain.on(IPC.DRAG_MOVE, () => wm.drag())

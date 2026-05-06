@@ -64,6 +64,17 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
       const res = await fetch(this.cfg.restTickerUrl(symbolUpper))
       if (!res.ok) {
         console.warn(`[${this.id}] REST ${symbolUpper} failed: HTTP ${res.status}`)
+        // Invalid symbol (HTTP 400) → fast-fail subscribed items so validate's
+        // tryAdapter doesn't wait the full 5s timeout before falling back.
+        // WS for invalid streams stays silent indefinitely.
+        if (res.status === 400) {
+          const items = this.streamToItems.get(stream)
+          if (items) {
+            for (const itemId of items) {
+              this.emit('itemError', itemId, `${this.id}에 없는 심볼입니다`)
+            }
+          }
+        }
         return
       }
       const data = (await res.json()) as any

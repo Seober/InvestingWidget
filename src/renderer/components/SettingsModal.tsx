@@ -12,7 +12,8 @@ const ASSET_LABELS: Record<AssetType, string> = {
   'crypto-perp': '암호화폐 선물',
   'stock-us': '미국 주식',
   'etf-us': '미국 ETF',
-  'stock-kr': '한국 주식'
+  'stock-kr': '한국 주식',
+  'etf-kr': '한국 ETF'
 }
 
 export function SettingsModal({ config, onClose, onSave }: Props) {

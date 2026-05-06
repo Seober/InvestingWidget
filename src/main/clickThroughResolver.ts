@@ -12,13 +12,12 @@ export function resolveClickThroughUrl(item: ItemConfig, config: AppConfig): str
   const symbolUpper = item.symbol.toUpperCase()
   const quote = (item.quoteCurrency ?? 'USDT').toUpperCase()
   const base = symbolUpper
-  // KR stocks may be stored with a market prefix ("KOSDAQ:091990") for TradingView
+  // KR stocks/ETFs may be stored with a market prefix ("KOSDAQ:091990") for TradingView
   // subscription, but the click-through URL template (kr.tradingview.com/symbols/KRX-…)
   // only wants the bare 6-digit code.
+  const isKr = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
   const urlSymbol =
-    item.assetType === 'stock-kr' && symbolUpper.includes(':')
-      ? symbolUpper.split(':')[1]
-      : symbolUpper
+    isKr && symbolUpper.includes(':') ? symbolUpper.split(':')[1] : symbolUpper
   const fullSymbol =
     item.assetType === 'crypto-spot' || item.assetType === 'crypto-perp'
       ? `${base}${quote}`

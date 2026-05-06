@@ -10,6 +10,7 @@ export const IPC = {
   ITEM_CANCEL_VALIDATE: 'item:cancelValidate',
 
   KR_STOCK_RESOLVE: 'kr:stockResolve',
+  SYMBOL_SEARCH: 'symbol:search',
 
   DRAG_START: 'drag:start',
   DRAG_MOVE: 'drag:move',

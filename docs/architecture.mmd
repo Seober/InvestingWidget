@@ -1,0 +1,41 @@
+%%{init: {
+    "theme": "base",
+    "themeVariables": {
+      "background": "#FAFAF9",
+      "mainBkg": "#FAFAF9",
+      "primaryColor": "#FAFAF9",
+      "primaryTextColor": "#18181B",
+      "primaryBorderColor": "#E4E4E7",
+      "lineColor": "#71717A",
+      "fontFamily": "ui-monospace, Menlo, Cascadia Code, monospace",
+      "fontSize": "13px",
+      "clusterBkg": "transparent",
+      "clusterBorder": "#A1A1AA",
+      "edgeLabelBackground": "#FAFAF9"
+    }
+  }}%%
+  flowchart TB
+      subgraph main["fa:fa-cogs &nbsp;Main Process (Node.js)"]
+          direction TB
+          ps["fa:fa-rss &nbsp;priceService<br/>adapter chain + source hint"]:::accent
+          cs["configStore<br/>debounced disk write"]
+          wm["windowMgr<br/>menu + modal"]
+
+          ps --> binance[("Binance WS")]
+          ps --> gateio[("Gate.io WS")]
+          ps --> finnhub[("Finnhub WS")]
+          ps --> tv[("TradingView")]
+      end
+
+      subgraph renderer["fa:fa-desktop &nbsp;Renderer (React + Zustand)"]
+          direction TB
+          app["App"]:::accent
+          ir["ItemRow"]
+          modals["AddItemModal / ListEditModal<br/>SettingsModal / SymbolAutocomplete"]
+          app --> ir
+          app --> modals
+      end
+
+      main -.->|"fa:fa-exchange &nbsp;IPC via contextBridge<br/>tick / itemError / status"| renderer
+
+      classDef accent stroke:#B45309,color:#B45309,stroke-width:2px

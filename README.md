@@ -4,7 +4,7 @@ Windows 데스크톱에서 항상 위에 떠 있는 미니 위젯. 암호화폐(
 
 > **100% AI 바이브코딩 프로젝트** — 개발자가 요구사항·검수·빌드 환경을 담당하고, AI가 코드 정독·설계·구현·디버깅을 사전 승인 흐름으로 진행했습니다.
 
-> 📦 **다운로드**: [Releases](https://github.com/Seober/InvestingWidget/releases/latest) → `InvestingWidget-x.y.z-win.zip` 받아 압축 해제 → `InvestingWidget.exe` 실행
+> 📦 **다운로드**: [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget Setup x.y.z.exe` 받아 실행 (NSIS 마법사 진행). 자세한 설치 절차는 아래 "다운로드·설치" 섹션 참고.
 
 ## 주요 기능
 
@@ -53,6 +53,17 @@ Windows 데스크톱에서 항상 위에 떠 있는 미니 위젯. 암호화폐(
 
 ## 시작하기
 
+### 다운로드·설치 (사용자)
+
+1. [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget Setup x.y.z.exe` 다운로드
+2. 더블클릭 → NSIS 마법사 진행:
+   - **설치 모드**: 현재 사용자 전용 (관리자 권한 불필요)
+   - **설치 경로 선택** (default `%LOCALAPPDATA%\Programs\InvestingWidget`) — 다른 경로 선택 시 끝에 자동으로 `InvestingWidget` 디렉토리가 추가됨
+   - **Components 페이지**: 바탕화면 바로가기·시작메뉴 바로가기 체크박스 직접 선택
+3. 설치 완료 후 자동 실행. 이후 시작메뉴/바탕화면 바로가기로 실행
+
+> **첫 실행 시 SmartScreen 경고**: 코드 서명 인증서가 없어서 "Windows에서 PC를 보호했습니다" 경고가 뜰 수 있습니다. **추가 정보 → 실행** 으로 진행하세요.
+
 ### 개발 모드
 
 ```bash
@@ -60,17 +71,18 @@ npm install
 npm run dev
 ```
 
-### Windows .exe 빌드 (WSL/Linux 또는 Windows에서)
+### Windows .exe 빌드 (개발자/contributor)
 
 ```bash
 npm run package:win
 ```
 
-산출물: `release/InvestingWidget-x.y.z-win.zip` (압축해제 후 `InvestingWidget.exe` 실행)
+산출물 (`release/`):
+- `InvestingWidget Setup x.y.z.exe` — NSIS 인스톨러
+- `latest.yml` — electron-updater manifest (자동 업데이트 진단용)
+- `InvestingWidget Setup x.y.z.exe.blockmap` — delta update 청크
 
-WSL/Linux에서 빌드 시 `wine` 필요 (electron-builder의 rcedit 의존).
-
-> **첫 실행 시 SmartScreen 경고**: 코드 서명 인증서가 없어서 "Windows에서 PC를 보호했습니다" 경고가 뜰 수 있습니다. **추가 정보 → 실행** 으로 진행하세요.
+WSL/Linux 빌드 시 `wine` + `wine32` 필요 (NSIS makensis 가 32-bit 바이너리). Native Windows 빌드는 GitHub Actions 의 `windows-latest` runner 가 처리 (`.github/workflows/release.yml`) — tag push 시 자동 release 발행.
 
 ## 사용 방법
 
@@ -99,6 +111,17 @@ WSL/Linux에서 빌드 시 `wine` 필요 (electron-builder의 rcedit 의존).
 | ⏸ | 어댑터 침묵 (자기치유 폴링도 회복 못 함) | 거래량 매우 적거나 잘못된 심볼 의심 |
 
 행에 마우스 오버하면 시세 출처(Binance Spot, Gate.io Futures, Finnhub, TradingView 등)가 툴팁으로 표시됩니다.
+
+## 자동 업데이트
+
+앱 시작 후 약 10초 뒤 백그라운드로 새 버전을 자동 체크합니다 (GitHub Releases 의 `latest.yml` 사용).
+
+- **새 버전 발견 시**: native dialog "새 버전 v{X} 발견 — 다운로드?" → 동의 시 progress modal 띄움 (다운로드 % · 전송량 · 속도 표시) → 완료 후 재시작 confirm dialog
+- **수동 trigger**: 우클릭 → **업데이트 확인…** — 결과 없으면 "최신 버전입니다" 알림
+- **progress modal 닫기**: 백그라운드 다운로드 계속, 완료 시 native dialog 가 안전망으로 다시 confirm
+- **재시작 동의 안 함**: 자동 적용 X — 다음에 수동 체크 또는 재실행 시 자동 체크 시 재발화
+
+> **자동 업데이트는 v0.5.0 부터 도입**. v0.4.0 이하 zip 사용자는 v0.5.0 `.exe` 인스톨러로 한 번 재설치 필요 (config 는 자동 보존 — 같은 `%APPDATA%\investing-widget\config.json` 사용).
 
 ## 한국 주식·ETF 사용 시 주의
 

@@ -14,11 +14,12 @@ if (files.length === 0) {
   process.exit(1)
 }
 
-const isWindows = process.platform === 'win32'
+// shell: true — Windows 에서 npx.cmd 직접 spawn 시 EINVAL. shell 을 거쳐야 .cmd 인식.
+// args 모두 정적 값 (file list 는 readdir 결과) 라 shell injection risk X.
 const child = spawn(
-  isWindows ? 'npx.cmd' : 'npx',
+  'npx',
   ['tsx', '--tsconfig', 'tsconfig.test.json', '--test', ...files],
-  { stdio: 'inherit', shell: false }
+  { stdio: 'inherit', shell: true }
 )
 
 child.on('exit', (code) => process.exit(code ?? 1))

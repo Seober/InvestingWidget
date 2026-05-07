@@ -9,6 +9,13 @@
 
 !define MUI_COMPONENTSPAGE_NODESC
 
+; -- electron-builder 의 default install Section ("install" INSTALL_SECTION_ID, installer.nsi:87) 을
+;    Components 페이지에서 hide. 빈 이름 SectionSetText 로 표시 제거 — NSIS 표준 동작.
+;    customInit 은 installer.nsi 의 .onInit 안 (Section 정의 후) 에서 호출되므로 ID 사용 가능.
+!macro customInit
+  SectionSetText ${INSTALL_SECTION_ID} ""
+!macroend
+
 ; -- 페이지 추가 hook (electron-builder 의 assistedInstaller.nsh:42 에서 호출, INSTDIR sanitize 후)
 !macro customPageAfterChangeDir
   !insertmacro MUI_PAGE_COMPONENTS

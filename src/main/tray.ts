@@ -1,6 +1,7 @@
 import { Tray, Menu } from 'electron'
 import { ConfigStore } from './configStore'
 import { WindowManager } from './windowManager'
+import { UpdaterManager } from './autoUpdater'
 import { buildContextMenuTemplate } from './menuBuilder'
 import { iconPath } from './iconPath'
 
@@ -10,6 +11,7 @@ export class TrayManager {
   constructor(
     private wm: WindowManager,
     private config: ConfigStore,
+    private updater: UpdaterManager,
     private onChange: () => void
   ) {}
 
@@ -23,7 +25,13 @@ export class TrayManager {
     this.tray.on('right-click', () => {
       const win = this.wm.window
       if (!win) return
-      const template = buildContextMenuTemplate(win, this.config, this.wm, this.onChange)
+      const template = buildContextMenuTemplate(
+        win,
+        this.config,
+        this.wm,
+        this.updater,
+        this.onChange
+      )
       this.tray!.popUpContextMenu(Menu.buildFromTemplate(template))
     })
   }

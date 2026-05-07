@@ -5,6 +5,7 @@ import { IPC } from '@shared/ipcChannels'
 import { ConfigStore } from './configStore'
 import { WindowManager } from './windowManager'
 import { PriceService } from './priceService'
+import { UpdaterManager } from './autoUpdater'
 import { showContextMenu } from './menuBuilder'
 import { resolveClickThroughUrl } from './clickThroughResolver'
 import { setAutoStart } from './autostart'
@@ -16,9 +17,10 @@ export function registerIpc(opts: {
   config: ConfigStore
   wm: WindowManager
   prices: PriceService
+  updater: UpdaterManager
   broadcastConfig: () => void
 }) {
-  const { config, wm, prices, broadcastConfig } = opts
+  const { config, wm, prices, updater, broadcastConfig } = opts
 
   ipcMain.handle(IPC.CONFIG_GET, () => config.get())
 
@@ -140,7 +142,7 @@ export function registerIpc(opts: {
   ipcMain.on(IPC.MENU_SHOW, () => {
     const win = wm.window
     if (!win) return
-    showContextMenu(win, config, wm, broadcastConfig)
+    showContextMenu(win, config, wm, updater, broadcastConfig)
   })
 
   ipcMain.on(IPC.APP_QUIT, () => {

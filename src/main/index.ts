@@ -29,15 +29,15 @@ async function main() {
     wm.sendToRenderer(IPC.CONFIG_CHANGED, config.get())
   }
 
-  registerIpc({ config, wm, prices, broadcastConfig })
+  const updater = new UpdaterManager(() => wm.window)
+
+  registerIpc({ config, wm, prices, updater, broadcastConfig })
 
   wm.create()
   prices.setItems(cfg.items)
 
-  const tray = new TrayManager(wm, config, broadcastConfig)
+  const tray = new TrayManager(wm, config, updater, broadcastConfig)
   tray.create()
-
-  const updater = new UpdaterManager(() => wm.window)
 
   const lifecycle = new AppLifecycle(wm, config, prices, tray, updater)
   lifecycle.register()

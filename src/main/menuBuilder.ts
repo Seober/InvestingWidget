@@ -3,6 +3,7 @@ import { ConfigStore } from './configStore'
 import { setAutoStart } from './autostart'
 import { WindowManager } from './windowManager'
 import { openModal } from './modalWindow'
+import { UpdaterManager } from './autoUpdater'
 
 const REFRESH_PRESETS = [
   { label: '0.25초', value: 250 },
@@ -16,6 +17,7 @@ export function buildContextMenuTemplate(
   win: BrowserWindow,
   config: ConfigStore,
   wm: WindowManager,
+  updater: UpdaterManager,
   onChange: () => void
 ): MenuItemConstructorOptions[] {
   const cfg = config.get()
@@ -46,6 +48,12 @@ export function buildContextMenuTemplate(
     { label: '항목 관리', submenu: itemMgmtSubmenu },
     { type: 'separator' },
     { label: '갱신 간격', submenu: refreshSubmenu },
+    {
+      label: '업데이트 확인…',
+      click: () => {
+        void updater.manualCheck()
+      }
+    },
     {
       label: '고급 설정…',
       click: () => openModal({ parent: win, kind: 'settings' })
@@ -79,8 +87,9 @@ export function showContextMenu(
   win: BrowserWindow,
   config: ConfigStore,
   wm: WindowManager,
+  updater: UpdaterManager,
   onChange: () => void
 ) {
-  const template = buildContextMenuTemplate(win, config, wm, onChange)
+  const template = buildContextMenuTemplate(win, config, wm, updater, onChange)
   Menu.buildFromTemplate(template).popup({ window: win })
 }

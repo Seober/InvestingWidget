@@ -18,7 +18,7 @@
       subgraph main["fa:fa-cogs &nbsp;Main Process (Node.js)"]
           direction TB
           lifecycle["AppLifecycle<br/>onReady · single-instance"]:::accent
-          ps["fa:fa-rss &nbsp;priceService<br/>adapter chain + AdapterResolver"]:::accent
+          ps["fa:fa-rss &nbsp;priceService<br/>adapter chain (BaseWsAdapter) + AdapterResolver"]:::accent
           cs["configStore<br/>debounced disk write"]
           wm["windowMgr<br/>menu + modal"]
           tray["TrayManager<br/>icon · context menu"]

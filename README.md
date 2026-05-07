@@ -135,7 +135,7 @@ TradingView WebSocket은 **비공식 엔드포인트**입니다. 라이브러리
 
 ## 시스템 아키텍처
 
-<img src="docs/architecture_v0.5.0.svg" alt="System architecture (v0.5.0)" width="800">
+<img src="docs/architecture_v0.6.0.svg" alt="System architecture (v0.6.0)" width="800">
 
 ```
 src/

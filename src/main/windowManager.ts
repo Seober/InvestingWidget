@@ -106,8 +106,8 @@ export class WindowManager {
 
   setContentSize(size: { width?: number; height?: number }) {
     if (!this.win) return
-    // setBounds 사용 — frameless + transparent + resizable:false 조합에서 setContentSize 가
-    // 무시되는 사례 회피. drag resize 도 setBounds 로 잘 동작 확인됨.
+    // setBounds 사용 — frameless+transparent+resizable:false 에서 setContentSize 가 무시되는
+    // 케이스 회피. drag resize 도 setBounds 로 잘 동작 확인됨.
     const cur = this.win.getBounds()
     const w = Math.max(200, Math.round(size.width ?? cur.width))
     const h = Math.max(60, Math.round(size.height ?? cur.height))

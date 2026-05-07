@@ -63,7 +63,19 @@ export function App() {
 
   const autofitHeight = useCallback(() => {
     flashAutofitFeedback()
-    const rowsH = rowsRef.current?.scrollHeight ?? 0
+    // .rows 는 flex:1 로 부모 따라 늘어남 → scrollHeight 가 콘텐츠 자연 높이 대신
+    // .rows 자체 영역을 반환(W3C: 콘텐츠가 컨테이너에 다 들어가면 scrollHeight = clientHeight).
+    // 자식 .row 들의 offsetHeight 합 + gap 으로 정확한 콘텐츠 자연 높이 측정.
+    const rowsEl = rowsRef.current
+    let rowsH = 0
+    if (rowsEl) {
+      const children = rowsEl.children
+      const n = children.length
+      for (let i = 0; i < n; i++) {
+        rowsH += (children[i] as HTMLElement).offsetHeight
+      }
+      if (n > 1) rowsH += n - 1 // .rows { gap: 1px }
+    }
     const headerH = headerRef.current?.offsetHeight ?? 0
     // .app vertical padding 4*2 = 8, .header margin-bottom 2, .app border 1*2 = 2
     const target = 8 + headerH + 2 + rowsH + 2

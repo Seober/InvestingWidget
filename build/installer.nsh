@@ -10,13 +10,32 @@
 !define MUI_COMPONENTSPAGE_NODESC
 
 ; -- electron-builder 의 default install Section ("install" INSTALL_SECTION_ID, installer.nsi:87) 을
-;    Components 페이지에서 hide. 빈 이름 SectionSetText 로 표시 제거 — NSIS 표준 동작.
-;    INSTALL_SECTION_ID 는 installer.nsi:87 의 Section 명령에서 자동 정의되지만,
-;    customInit 매크로 expand 시점 (installer.nsi:73) 이 그보다 *먼저* 라 ${INSTALL_SECTION_ID}
-;    직접 참조 시 NSIS warning 6000 (unknown variable/constant). 첫 Section 이 "install" 이라
-;    hardcoded index 0 사용 — runtime SectionSetText 명령에 literal 전달.
+;    Components 페이지에서 hide. NsisTarget.js:553 의 customInclude 가 우리 nsh 를 main
+;    installer.nsi 보다 *먼저* 처리해 SecDesktop=0, SecStartMenu=1, install=2 순으로 등록되므로
+;    hardcoded index 사용은 fragile. SectionGetText 로 모든 Section 순회·이름 "install" 인 것
+;    찾아 SectionSetText 빈 이름 hide 로 변경 — 등록 순서·Section 추가에 robust.
+;    SectionGetFlags 의 error flag 로 valid index 한계 정확 detect (hidden Section "" 안전).
+;    StrCmp 는 case-insensitive 라 template 의 case 변경에도 robust.
+;    Push/Pop 으로 $0/$1/$2 보존 — 다른 hook 의 composability 보호.
 !macro customInit
-  SectionSetText 0 ""
+  Push $0
+  Push $1
+  Push $2
+  StrCpy $0 0
+  customInit_loop:
+    ClearErrors
+    SectionGetFlags $0 $2
+    IfErrors customInit_done
+    SectionGetText $0 $1
+    StrCmp $1 "install" 0 customInit_next
+    SectionSetText $0 ""
+  customInit_next:
+    IntOp $0 $0 + 1
+    Goto customInit_loop
+  customInit_done:
+  Pop $2
+  Pop $1
+  Pop $0
 !macroend
 
 ; -- 페이지 추가 hook (electron-builder 의 assistedInstaller.nsh:42 에서 호출, INSTDIR sanitize 후)

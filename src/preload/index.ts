@@ -13,18 +13,23 @@ import type {
   ValidateResult,
 } from '@shared/schema'
 
+// IPC listener 등록·정리 단일 helper — main → renderer 이벤트 5종 (config-changed,
+// price-tick, price-status, update-progress, update-downloaded) 의 동일 패턴 통합.
+// 반환된 unsubscriber 함수 호출 시 listener 제거 (effect cleanup 패턴).
+function subscribe<T>(channel: string, cb: (data: T) => void): () => void {
+  const handler = (_e: Electron.IpcRendererEvent, data: T) => cb(data)
+  ipcRenderer.on(channel, handler)
+  return () => {
+    ipcRenderer.removeListener(channel, handler)
+  }
+}
+
 const api = {
   config: {
     get: (): Promise<AppConfig> => ipcRenderer.invoke(IPC.CONFIG_GET),
     set: (patch: Partial<AppConfig>): Promise<AppConfig> =>
       ipcRenderer.invoke(IPC.CONFIG_SET, patch),
-    onChange: (cb: (cfg: AppConfig) => void): (() => void) => {
-      const handler = (_e: Electron.IpcRendererEvent, cfg: AppConfig) => cb(cfg)
-      ipcRenderer.on(IPC.CONFIG_CHANGED, handler)
-      return () => {
-        ipcRenderer.removeListener(IPC.CONFIG_CHANGED, handler)
-      }
-    },
+    onChange: (cb: (cfg: AppConfig) => void): (() => void) => subscribe(IPC.CONFIG_CHANGED, cb),
   },
   items: {
     add: (draft: Omit<ItemConfig, 'id'>): Promise<ItemConfig> =>
@@ -77,36 +82,14 @@ const api = {
       ipcRenderer.send(IPC.MODAL_OPEN, { kind: 'edit-item', itemId }),
   },
   prices: {
-    onTick: (cb: (tick: Tick | null) => void): (() => void) => {
-      const h = (_e: Electron.IpcRendererEvent, tick: Tick | null) => cb(tick)
-      ipcRenderer.on(IPC.PRICE_TICK, h)
-      return () => {
-        ipcRenderer.removeListener(IPC.PRICE_TICK, h)
-      }
-    },
-    onStatus: (cb: (evt: StatusEvent) => void): (() => void) => {
-      const h = (_e: Electron.IpcRendererEvent, evt: StatusEvent) => cb(evt)
-      ipcRenderer.on(IPC.PRICE_STATUS, h)
-      return () => {
-        ipcRenderer.removeListener(IPC.PRICE_STATUS, h)
-      }
-    },
+    onTick: (cb: (tick: Tick | null) => void): (() => void) => subscribe(IPC.PRICE_TICK, cb),
+    onStatus: (cb: (evt: StatusEvent) => void): (() => void) => subscribe(IPC.PRICE_STATUS, cb),
   },
   updater: {
-    onProgress: (cb: (info: UpdateProgressInfo) => void): (() => void) => {
-      const h = (_e: Electron.IpcRendererEvent, info: UpdateProgressInfo) => cb(info)
-      ipcRenderer.on(IPC.UPDATE_PROGRESS, h)
-      return () => {
-        ipcRenderer.removeListener(IPC.UPDATE_PROGRESS, h)
-      }
-    },
-    onDownloaded: (cb: (info: UpdateDownloadedInfo) => void): (() => void) => {
-      const h = (_e: Electron.IpcRendererEvent, info: UpdateDownloadedInfo) => cb(info)
-      ipcRenderer.on(IPC.UPDATE_DOWNLOADED, h)
-      return () => {
-        ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, h)
-      }
-    },
+    onProgress: (cb: (info: UpdateProgressInfo) => void): (() => void) =>
+      subscribe(IPC.UPDATE_PROGRESS, cb),
+    onDownloaded: (cb: (info: UpdateDownloadedInfo) => void): (() => void) =>
+      subscribe(IPC.UPDATE_DOWNLOADED, cb),
     acceptInstall: () => ipcRenderer.send(IPC.UPDATE_ACCEPT_INSTALL),
   },
   app: {

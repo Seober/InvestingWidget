@@ -4,6 +4,8 @@ import { WindowManager } from './windowManager'
 import { PriceService } from './priceService'
 import { registerIpc } from './ipcRouter'
 import { setAutoStart } from './autostart'
+import { TrayManager } from './tray'
+import { IPC } from '@shared/ipcChannels'
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -20,10 +22,20 @@ async function main() {
 
   const wm = new WindowManager(config)
   const prices = new PriceService(cfg)
-  registerIpc({ config, wm, prices })
+
+  const broadcastConfig = () => {
+    const w = wm.window
+    if (!w) return
+    w.webContents.send(IPC.CONFIG_CHANGED, config.get())
+  }
+
+  registerIpc({ config, wm, prices, broadcastConfig })
 
   const win = wm.create()
   prices.setItems(cfg.items)
+
+  const tray = new TrayManager(wm, config, broadcastConfig)
+  tray.create()
 
   app.on('second-instance', () => {
     if (win.isMinimized()) win.restore()
@@ -35,6 +47,7 @@ async function main() {
   })
 
   app.on('before-quit', async () => {
+    tray.destroy()
     config.flush()
     await prices.destroy()
   })

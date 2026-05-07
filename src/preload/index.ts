@@ -60,6 +60,8 @@ const api = {
       ipcRenderer.invoke(IPC.ALWAYS_ON_TOP_SET, enabled),
     setAutoStart: (enabled: boolean): Promise<boolean> =>
       ipcRenderer.invoke(IPC.AUTOSTART_SET, enabled),
+    setContentSize: (size: { width?: number; height?: number }): Promise<void> =>
+      ipcRenderer.invoke(IPC.WINDOW_SET_CONTENT_SIZE, size),
     closeSelf: () => window.close()
   },
   links: {

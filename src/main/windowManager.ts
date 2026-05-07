@@ -31,7 +31,7 @@ export class WindowManager {
       alwaysOnTop: cfg.window.alwaysOnTop,
       resizable: true,
       hasShadow: false,
-      skipTaskbar: false,
+      skipTaskbar: true,
       backgroundColor: '#00000000',
       icon: iconPath(),
       webPreferences: {
@@ -80,6 +80,30 @@ export class WindowManager {
     this.config.set({
       window: { ...this.config.get().window, alwaysOnTop: enabled }
     })
+  }
+
+  show() {
+    if (!this.win) return
+    this.win.show()
+  }
+
+  hide() {
+    if (!this.win) return
+    this.win.hide()
+  }
+
+  toggleVisibility() {
+    if (!this.win) return
+    if (this.win.isVisible()) this.win.hide()
+    else this.win.show()
+  }
+
+  setContentSize(size: { width?: number; height?: number }) {
+    if (!this.win) return
+    const [curW, curH] = this.win.getContentSize()
+    const w = Math.max(200, Math.round(size.width ?? curW))
+    const h = Math.max(60, Math.round(size.height ?? curH))
+    this.win.setContentSize(w, h)
   }
 
   beginDrag() {

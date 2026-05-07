@@ -12,12 +12,12 @@ const REFRESH_PRESETS = [
   { label: '5초', value: 5000 }
 ]
 
-export function showContextMenu(
+export function buildContextMenuTemplate(
   win: BrowserWindow,
   config: ConfigStore,
   wm: WindowManager,
   onChange: () => void
-) {
+): MenuItemConstructorOptions[] {
   const cfg = config.get()
 
   const itemMgmtSubmenu: MenuItemConstructorOptions[] = [
@@ -42,7 +42,7 @@ export function showContextMenu(
     }
   }))
 
-  const template: MenuItemConstructorOptions[] = [
+  return [
     { label: '항목 관리', submenu: itemMgmtSubmenu },
     { type: 'separator' },
     { label: '갱신 간격', submenu: refreshSubmenu },
@@ -73,6 +73,14 @@ export function showContextMenu(
     { type: 'separator' },
     { label: '종료', click: () => app.quit() }
   ]
+}
 
+export function showContextMenu(
+  win: BrowserWindow,
+  config: ConfigStore,
+  wm: WindowManager,
+  onChange: () => void
+) {
+  const template = buildContextMenuTemplate(win, config, wm, onChange)
   Menu.buildFromTemplate(template).popup({ window: win })
 }

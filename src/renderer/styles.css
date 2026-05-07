@@ -38,6 +38,12 @@ body {
   border-color: rgba(0, 0, 0, 0.08);
 }
 
+/* 가장자리 더블클릭 → 열 자동맞춤 시 한 프레임 동안 max-content 측정용 */
+.app.measuring-width {
+  width: max-content !important;
+  max-width: none !important;
+}
+
 .loading,
 .empty {
   display: flex;

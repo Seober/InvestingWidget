@@ -16,14 +16,9 @@ export function registerIpc(opts: {
   config: ConfigStore
   wm: WindowManager
   prices: PriceService
+  broadcastConfig: () => void
 }) {
-  const { config, wm, prices } = opts
-
-  const broadcastConfig = () => {
-    const win = wm.window
-    if (!win) return
-    win.webContents.send(IPC.CONFIG_CHANGED, config.get())
-  }
+  const { config, wm, prices, broadcastConfig } = opts
 
   ipcMain.handle(IPC.CONFIG_GET, () => config.get())
 
@@ -122,6 +117,13 @@ export function registerIpc(opts: {
     broadcastConfig()
     return enabled
   })
+
+  ipcMain.handle(
+    IPC.WINDOW_SET_CONTENT_SIZE,
+    (_e, size: { width?: number; height?: number }) => {
+      wm.setContentSize(size)
+    }
+  )
 
   ipcMain.on(IPC.LINK_OPEN, (_e, itemId: string) => {
     const cfg = config.get()

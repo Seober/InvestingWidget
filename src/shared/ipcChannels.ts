@@ -20,6 +20,7 @@ export const IPC = {
   ALWAYS_ON_TOP_SET: 'alwaysOnTop:set',
   AUTOSTART_SET: 'autostart:set',
   WINDOW_RESIZE_SAVE: 'window:resizeSave',
+  WINDOW_SET_CONTENT_SIZE: 'window:setContentSize',
   MODAL_OPEN: 'modal:open',
 
   LINK_OPEN: 'link:open',

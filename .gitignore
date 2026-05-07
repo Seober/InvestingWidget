@@ -7,4 +7,5 @@ dist/
 .vscode/
 .idea/
 .claude/
+*:Zone.Identifier
 resources/InvestingWidget.old.png

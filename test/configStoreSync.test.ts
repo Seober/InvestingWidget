@@ -18,14 +18,14 @@ function migrate(raw: Partial<AppConfig> & { schemaVersion?: number }): AppConfi
       ...(raw.defaults ?? {}),
       clickThroughTemplates: {
         ...DEFAULT_CONFIG.defaults.clickThroughTemplates,
-        ...(raw.defaults?.clickThroughTemplates ?? {})
+        ...(raw.defaults?.clickThroughTemplates ?? {}),
       },
       opacityBounds: {
         ...DEFAULT_CONFIG.defaults.opacityBounds,
-        ...(raw.defaults?.opacityBounds ?? {})
-      }
+        ...(raw.defaults?.opacityBounds ?? {}),
+      },
     },
-    items: raw.items ?? []
+    items: raw.items ?? [],
   }
   merged.schemaVersion = 1
   return merged
@@ -100,7 +100,7 @@ test('flush forces a disk write', () => {
 
 test('migrate preserves user items', () => {
   const result = migrate({
-    items: [{ id: 'x', symbol: 'BTC', assetType: 'crypto-spot' }]
+    items: [{ id: 'x', symbol: 'BTC', assetType: 'crypto-spot' }],
   })
   assert.equal(result.items.length, 1)
   assert.equal(result.items[0]!.symbol, 'BTC')

@@ -13,7 +13,7 @@ const ASSET_LABELS: Record<AssetType, string> = {
   'stock-us': '미국 주식',
   'etf-us': '미국 ETF',
   'stock-kr': '한국 주식',
-  'etf-kr': '한국 ETF'
+  'etf-kr': '한국 ETF',
 }
 
 export function SettingsModal({ config, onClose, onSave }: Props) {
@@ -61,8 +61,8 @@ export function SettingsModal({ config, onClose, onSave }: Props) {
         defaults: {
           ...config.defaults,
           opacityBounds: { min: Math.min(opMin, opMax), max: Math.max(opMin, opMax) },
-          clickThroughTemplates: templates
-        }
+          clickThroughTemplates: templates,
+        },
       })
       onClose()
     } finally {
@@ -85,7 +85,9 @@ export function SettingsModal({ config, onClose, onSave }: Props) {
             value={refreshIntervalMs}
             onChange={(e) => setRefresh(Number(e.target.value))}
           />
-          <small className="muted">UI 렌더 throttle. WebSocket 데이터는 더 빠르게 들어옵니다.</small>
+          <small className="muted">
+            UI 렌더 throttle. WebSocket 데이터는 더 빠르게 들어옵니다.
+          </small>
         </label>
 
         <label>

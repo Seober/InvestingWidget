@@ -158,7 +158,11 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
   }
 
   private connectIfNeeded() {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    )
+      return
     if (this.destroyed) return
     this.setStatus('connecting')
     this.ws = new WebSocket(this.cfg.baseUrl)
@@ -218,9 +222,7 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
 
   private sendSubscribe(streams: string[]) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return
-    this.ws.send(
-      JSON.stringify({ method: 'SUBSCRIBE', params: streams, id: this.msgIdCounter++ })
-    )
+    this.ws.send(JSON.stringify({ method: 'SUBSCRIBE', params: streams, id: this.msgIdCounter++ }))
   }
 
   private sendUnsubscribe(streams: string[]) {
@@ -262,7 +264,7 @@ export function createBinanceSpot(): BinanceAdapter {
     id: 'binance-spot',
     baseUrl: 'wss://stream.binance.com:9443/stream',
     restTickerUrl: (sym) =>
-      `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(sym)}`
+      `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(sym)}`,
   })
 }
 
@@ -271,6 +273,6 @@ export function createBinancePerp(): BinanceAdapter {
     id: 'binance-perp',
     baseUrl: 'wss://fstream.binance.com/stream',
     restTickerUrl: (sym) =>
-      `https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${encodeURIComponent(sym)}`
+      `https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${encodeURIComponent(sym)}`,
   })
 }

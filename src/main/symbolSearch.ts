@@ -46,14 +46,16 @@ async function getSpotIndex(): Promise<SpotPair[]> {
       merged.push({
         base: String(s.baseAsset),
         quote: String(s.quoteAsset),
-        source: 'binance-spot'
+        source: 'binance-spot',
       })
     }
   } catch (err: any) {
     console.warn('[symbol-search] binance spot:', err?.message ?? err)
   }
   // De-dupe key by base+quote (uppercase) so we know what to skip from Gate.io.
-  const seen = new Set<string>(merged.map((p) => `${p.base.toUpperCase()}_${p.quote.toUpperCase()}`))
+  const seen = new Set<string>(
+    merged.map((p) => `${p.base.toUpperCase()}_${p.quote.toUpperCase()}`)
+  )
   try {
     const gate = await fetchJson(GATEIO_SPOT_URL)
     if (Array.isArray(gate)) {
@@ -69,7 +71,7 @@ async function getSpotIndex(): Promise<SpotPair[]> {
           base,
           quote,
           baseName: p?.base_name ? String(p.base_name) : undefined,
-          source: 'gateio-spot'
+          source: 'gateio-spot',
         })
       }
     }
@@ -198,7 +200,7 @@ export async function searchSymbols(
       market: m.market,
       source: 'tradingview' as SourceId,
       // KOSPI: store bare code (toTVSymbol adds KRX:). Otherwise prefix explicitly.
-      storeAs: m.market === 'KOSPI' ? m.code : `${m.market}:${m.code}`
+      storeAs: m.market === 'KOSPI' ? m.code : `${m.market}:${m.code}`,
     }))
   }
 

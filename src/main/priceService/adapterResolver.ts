@@ -73,7 +73,7 @@ export class AdapterResolver {
       this.registry.gateSpot,
       this.registry.gatePerp,
       this.registry.finnhub,
-      this.registry.tv
+      this.registry.tv,
     ]
   }
 }

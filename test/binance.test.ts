@@ -17,7 +17,7 @@ test(
       id: 'btc-test',
       symbol: 'BTC',
       assetType: 'crypto-spot',
-      quoteCurrency: 'USDT'
+      quoteCurrency: 'USDT',
     }
 
     const tick = await new Promise<{ price: number; changePct: number }>((resolve, reject) => {
@@ -48,7 +48,7 @@ test(
       id: 'btc-perp-test',
       symbol: 'BTC',
       assetType: 'crypto-perp',
-      quoteCurrency: 'USDT'
+      quoteCurrency: 'USDT',
     }
 
     const got = await new Promise<boolean>((resolve) => {

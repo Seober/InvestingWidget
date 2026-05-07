@@ -44,8 +44,8 @@ export class WindowManager {
         preload: join(__dirname, '../preload/index.js'),
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false
-      }
+        sandbox: false,
+      },
     })
 
     this.win.setOpacity(cfg.window.opacity)
@@ -139,7 +139,7 @@ export class WindowManager {
     this.edgeResize = {
       edge,
       startCursor: screen.getCursorScreenPoint(),
-      startBounds: this.win.getBounds()
+      startBounds: this.win.getBounds(),
     }
   }
 
@@ -182,7 +182,7 @@ export class WindowManager {
       x: Math.round(x),
       y: Math.round(y),
       width: Math.round(width),
-      height: Math.round(height)
+      height: Math.round(height),
     })
   }
 

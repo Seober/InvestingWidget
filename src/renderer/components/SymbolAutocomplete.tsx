@@ -22,7 +22,7 @@ export function SymbolAutocomplete({
   onSelect,
   disabled,
   placeholder,
-  autoFocus
+  autoFocus,
 }: Props) {
   const [suggestions, setSuggestions] = useState<SymbolSuggestion[]>([])
   const [open, setOpen] = useState(false)

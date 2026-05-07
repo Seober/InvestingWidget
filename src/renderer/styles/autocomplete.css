@@ -43,7 +43,7 @@
 
 .autocomplete-symbol {
   font-weight: 600;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   color: #e5e7eb;
 }
 

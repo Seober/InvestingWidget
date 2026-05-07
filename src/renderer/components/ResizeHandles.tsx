@@ -15,7 +15,7 @@ const HANDLES: HandleSpec[] = [
   { edge: 'tl', cls: 'resize-tl', ariaLabel: 'Resize top-left corner' },
   { edge: 'tr', cls: 'resize-tr', ariaLabel: 'Resize top-right corner' },
   { edge: 'bl', cls: 'resize-bl', ariaLabel: 'Resize bottom-left corner' },
-  { edge: 'br', cls: 'resize-br', ariaLabel: 'Resize bottom-right corner' }
+  { edge: 'br', cls: 'resize-br', ariaLabel: 'Resize bottom-right corner' },
 ]
 
 const DRAG_THRESHOLD_PX = 5

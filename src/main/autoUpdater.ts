@@ -73,7 +73,7 @@ export class UpdaterManager {
       title: '업데이트 발견',
       message: `새 버전 v${version} 이 있습니다.`,
       detail: '지금 다운로드할까요? (다운로드 중에도 위젯 사용 가능)',
-      buttons: ['다운로드', '나중에']
+      buttons: ['다운로드', '나중에'],
     })
     if (choice !== 0) return
     try {
@@ -96,7 +96,7 @@ export class UpdaterManager {
       title: '업데이트 다운로드 완료',
       message: `v${version} 다운로드가 완료되었습니다.`,
       detail: '지금 재시작하고 적용하시겠습니까?',
-      buttons: ['재시작·적용', '나중에']
+      buttons: ['재시작·적용', '나중에'],
     })
     if (choice === 0) {
       this.acceptInstall()
@@ -119,7 +119,7 @@ export class UpdaterManager {
       percent: progress.percent,
       transferred: progress.transferred,
       total: progress.total,
-      bytesPerSecond: progress.bytesPerSecond
+      bytesPerSecond: progress.bytesPerSecond,
     })
   }
 
@@ -137,7 +137,7 @@ export class UpdaterManager {
       detail: opts.detail,
       buttons: opts.buttons,
       defaultId: 0,
-      cancelId: opts.buttons.length - 1
+      cancelId: opts.buttons.length - 1,
     }
     const result = win
       ? await dialog.showMessageBox(win, baseOpts)

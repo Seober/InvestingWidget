@@ -157,7 +157,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
         symbol: tvSymbol,
         price,
         changePct,
-        ts: Date.now()
+        ts: Date.now(),
       })
     })
     market.onError?.((err: any) => {

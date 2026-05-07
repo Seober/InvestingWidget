@@ -5,7 +5,7 @@ export function setAutoStart(enabled: boolean) {
     openAtLogin: enabled,
     openAsHidden: false,
     path: process.execPath,
-    args: []
+    args: [],
   })
 }
 

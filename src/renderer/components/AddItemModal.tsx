@@ -16,7 +16,7 @@ const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'stock-us', label: '미국 주식' },
   { value: 'etf-us', label: '미국 ETF' },
   { value: 'stock-kr', label: '한국 주식' },
-  { value: 'etf-kr', label: '한국 ETF' }
+  { value: 'etf-kr', label: '한국 ETF' },
 ]
 
 export function AddItemModal({ initial, existingItems, onClose, onSubmit, templates }: Props) {
@@ -93,8 +93,7 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
         if (match) {
           // KOSPI는 toTVSymbol이 KRX: 접두사를 자동 추가하므로 코드만 저장.
           // 그 외 시장(KOSDAQ/KONEX)은 명시적으로 접두사 포함해야 TradingView 인식.
-          finalSymbol =
-            match.market === 'KOSPI' ? match.code : `${match.market}:${match.code}`
+          finalSymbol = match.market === 'KOSPI' ? match.code : `${match.market}:${match.code}`
           if (!finalDisplayName) finalDisplayName = match.name
         } else if (isCode || isPrefixed) {
           // Naver는 못 찾았지만 사용자가 코드 형식으로 명시 → 신뢰.
@@ -132,7 +131,7 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
         displayName: finalDisplayName || undefined,
         quoteCurrency: isCrypto ? quoteCurrency.trim().toUpperCase() : undefined,
         clickThroughUrl: clickThroughUrl.trim() || undefined,
-        source: pickedSource
+        source: pickedSource,
       })
       if (!cancelledRef.current) onClose()
     } catch (err: unknown) {

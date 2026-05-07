@@ -8,7 +8,7 @@ import type {
   StatusEvent,
   SymbolSuggestion,
   Tick,
-  ValidateResult
+  ValidateResult,
 } from '@shared/schema'
 
 const api = {
@@ -22,40 +22,37 @@ const api = {
       return () => {
         ipcRenderer.removeListener(IPC.CONFIG_CHANGED, handler)
       }
-    }
+    },
   },
   items: {
     add: (draft: Omit<ItemConfig, 'id'>): Promise<ItemConfig> =>
       ipcRenderer.invoke(IPC.ITEM_ADD, draft),
-    edit: (item: ItemConfig): Promise<ItemConfig> =>
-      ipcRenderer.invoke(IPC.ITEM_EDIT, item),
+    edit: (item: ItemConfig): Promise<ItemConfig> => ipcRenderer.invoke(IPC.ITEM_EDIT, item),
     remove: (itemId: string): Promise<void> => ipcRenderer.invoke(IPC.ITEM_REMOVE, itemId),
     validate: (draft: Omit<ItemConfig, 'id'>): Promise<ValidateResult> =>
       ipcRenderer.invoke(IPC.ITEM_VALIDATE, draft),
-    cancelValidate: () => ipcRenderer.send(IPC.ITEM_CANCEL_VALIDATE)
+    cancelValidate: () => ipcRenderer.send(IPC.ITEM_CANCEL_VALIDATE),
   },
   kr: {
-    resolve: (
-      query: string
-    ): Promise<{ code: string; name: string; market: string } | null> =>
-      ipcRenderer.invoke(IPC.KR_STOCK_RESOLVE, query)
+    resolve: (query: string): Promise<{ code: string; name: string; market: string } | null> =>
+      ipcRenderer.invoke(IPC.KR_STOCK_RESOLVE, query),
   },
   symbols: {
     search: (params: {
       assetType: AssetType
       query: string
       quoteCurrency?: string
-    }): Promise<SymbolSuggestion[]> => ipcRenderer.invoke(IPC.SYMBOL_SEARCH, params)
+    }): Promise<SymbolSuggestion[]> => ipcRenderer.invoke(IPC.SYMBOL_SEARCH, params),
   },
   drag: {
     start: () => ipcRenderer.send(IPC.DRAG_START),
     move: () => ipcRenderer.send(IPC.DRAG_MOVE),
-    end: () => ipcRenderer.send(IPC.DRAG_END)
+    end: () => ipcRenderer.send(IPC.DRAG_END),
   },
   resize: {
     start: (edge: ResizeEdge) => ipcRenderer.send(IPC.RESIZE_HANDLE_START, edge),
     move: () => ipcRenderer.send(IPC.RESIZE_HANDLE_MOVE),
-    end: () => ipcRenderer.send(IPC.RESIZE_HANDLE_END)
+    end: () => ipcRenderer.send(IPC.RESIZE_HANDLE_END),
   },
   window: {
     setOpacity: (value: number): Promise<number> => ipcRenderer.invoke(IPC.OPACITY_SET, value),
@@ -65,17 +62,17 @@ const api = {
       ipcRenderer.invoke(IPC.AUTOSTART_SET, enabled),
     setContentSize: (size: { width?: number; height?: number }): Promise<void> =>
       ipcRenderer.invoke(IPC.WINDOW_SET_CONTENT_SIZE, size),
-    closeSelf: () => window.close()
+    closeSelf: () => window.close(),
   },
   links: {
-    open: (itemId: string) => ipcRenderer.send(IPC.LINK_OPEN, itemId)
+    open: (itemId: string) => ipcRenderer.send(IPC.LINK_OPEN, itemId),
   },
   menu: {
-    show: () => ipcRenderer.send(IPC.MENU_SHOW)
+    show: () => ipcRenderer.send(IPC.MENU_SHOW),
   },
   modal: {
     openEditItem: (itemId: string) =>
-      ipcRenderer.send(IPC.MODAL_OPEN, { kind: 'edit-item', itemId })
+      ipcRenderer.send(IPC.MODAL_OPEN, { kind: 'edit-item', itemId }),
   },
   prices: {
     onTick: (cb: (tick: Tick | null) => void): (() => void) => {
@@ -91,7 +88,7 @@ const api = {
       return () => {
         ipcRenderer.removeListener(IPC.PRICE_STATUS, h)
       }
-    }
+    },
   },
   updater: {
     onProgress: (
@@ -123,11 +120,11 @@ const api = {
         ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, h)
       }
     },
-    acceptInstall: () => ipcRenderer.send(IPC.UPDATE_ACCEPT_INSTALL)
+    acceptInstall: () => ipcRenderer.send(IPC.UPDATE_ACCEPT_INSTALL),
   },
   app: {
-    quit: () => ipcRenderer.send(IPC.APP_QUIT)
-  }
+    quit: () => ipcRenderer.send(IPC.APP_QUIT),
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

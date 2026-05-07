@@ -39,16 +39,16 @@ export const useStore = create<AppState>((set) => ({
           changePct: tick.changePct,
           ts: tick.ts,
           status: 'open',
-          errorMessage: undefined
-        }
-      }
+          errorMessage: undefined,
+        },
+      },
     })),
   setItemError: (itemId, message) =>
     set((s) => ({
       ticks: {
         ...s.ticks,
-        [itemId]: { ...s.ticks[itemId], status: 'closed', errorMessage: message }
-      }
+        [itemId]: { ...s.ticks[itemId], status: 'closed', errorMessage: message },
+      },
     })),
   setAdapterStatus: (adapterId, status, message) =>
     set((s) => {
@@ -59,5 +59,5 @@ export const useStore = create<AppState>((set) => ({
         next[item.id] = { ...next[item.id], status, errorMessage: message }
       }
       return { ticks: next }
-    })
+    }),
 }))

@@ -16,8 +16,7 @@ export function resolveClickThroughUrl(item: ItemConfig, config: AppConfig): str
   // subscription, but the click-through URL template (kr.tradingview.com/symbols/KRX-…)
   // only wants the bare 6-digit code.
   const isKr = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
-  const urlSymbol =
-    isKr && symbolUpper.includes(':') ? symbolUpper.split(':')[1] : symbolUpper
+  const urlSymbol = isKr && symbolUpper.includes(':') ? symbolUpper.split(':')[1] : symbolUpper
   const fullSymbol =
     item.assetType === 'crypto-spot' || item.assetType === 'crypto-perp'
       ? `${base}${quote}`

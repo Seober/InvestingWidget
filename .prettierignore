@@ -1,0 +1,14 @@
+node_modules/
+out/
+release/
+dist/
+build/
+patches/
+docs/
+*.svg
+*.png
+*.ico
+*.7z
+*.exe
+*.blockmap
+package-lock.json

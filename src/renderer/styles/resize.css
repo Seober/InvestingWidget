@@ -5,11 +5,59 @@
   background: transparent;
   pointer-events: auto;
 }
-.resize-top    { top: 0; left: 8px; right: 8px; height: 8px; cursor: ns-resize; }
-.resize-bottom { bottom: 0; left: 8px; right: 8px; height: 8px; cursor: ns-resize; }
-.resize-left   { left: 0; top: 8px; bottom: 8px; width: 8px; cursor: ew-resize; }
-.resize-right  { right: 0; top: 8px; bottom: 8px; width: 8px; cursor: ew-resize; }
-.resize-tl     { top: 0; left: 0; width: 8px; height: 8px; cursor: nwse-resize; }
-.resize-tr     { top: 0; right: 0; width: 8px; height: 8px; cursor: nesw-resize; }
-.resize-bl     { bottom: 0; left: 0; width: 8px; height: 8px; cursor: nesw-resize; }
-.resize-br     { bottom: 0; right: 0; width: 8px; height: 8px; cursor: nwse-resize; }
+.resize-top {
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: ns-resize;
+}
+.resize-bottom {
+  bottom: 0;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: ns-resize;
+}
+.resize-left {
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 8px;
+  cursor: ew-resize;
+}
+.resize-right {
+  right: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 8px;
+  cursor: ew-resize;
+}
+.resize-tl {
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nwse-resize;
+}
+.resize-tr {
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nesw-resize;
+}
+.resize-bl {
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nesw-resize;
+}
+.resize-br {
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nwse-resize;
+}

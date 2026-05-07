@@ -43,7 +43,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     height: 200,
     opacity: 0.9,
     alwaysOnTop: true,
-    autoStart: false
+    autoStart: false,
   },
   refreshIntervalMs: 500,
   theme: 'dark',
@@ -62,8 +62,8 @@ export const DEFAULT_CONFIG: AppConfig = {
       'stock-us': 'https://finance.yahoo.com/quote/{symbol}',
       'etf-us': 'https://finance.yahoo.com/quote/{symbol}',
       'stock-kr': 'https://kr.tradingview.com/symbols/KRX-{symbol}/',
-      'etf-kr': 'https://kr.tradingview.com/symbols/KRX-{symbol}/'
+      'etf-kr': 'https://kr.tradingview.com/symbols/KRX-{symbol}/',
     },
-    opacityBounds: { min: 0.15, max: 1.0 }
-  }
+    opacityBounds: { min: 0.15, max: 1.0 },
+  },
 }

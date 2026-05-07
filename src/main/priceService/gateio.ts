@@ -167,7 +167,11 @@ export class GateioAdapter extends EventEmitter implements PriceAdapter {
   }
 
   private connectIfNeeded() {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    )
+      return
     if (this.destroyed) return
     this.setStatus('connecting')
     this.ws = new WebSocket(this.cfg.baseUrl)
@@ -237,7 +241,7 @@ export class GateioAdapter extends EventEmitter implements PriceAdapter {
         time: Math.floor(Date.now() / 1000),
         channel: this.cfg.channel,
         event: 'subscribe',
-        payload: symbols
+        payload: symbols,
       })
     )
   }
@@ -249,7 +253,7 @@ export class GateioAdapter extends EventEmitter implements PriceAdapter {
         time: Math.floor(Date.now() / 1000),
         channel: this.cfg.channel,
         event: 'unsubscribe',
-        payload: symbols
+        payload: symbols,
       })
     )
   }
@@ -287,7 +291,7 @@ export function createGateioSpot(): GateioAdapter {
     baseUrl: 'wss://api.gateio.ws/ws/v4/',
     channel: 'spot.tickers',
     restTickerUrl: (sym) =>
-      `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${encodeURIComponent(sym)}`
+      `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${encodeURIComponent(sym)}`,
   })
 }
 
@@ -297,6 +301,6 @@ export function createGateioPerp(): GateioAdapter {
     baseUrl: 'wss://fx-ws.gateio.ws/v4/ws/usdt/',
     channel: 'futures.tickers',
     restTickerUrl: (sym) =>
-      `https://api.gateio.ws/api/v4/futures/usdt/tickers?contract=${encodeURIComponent(sym)}`
+      `https://api.gateio.ws/api/v4/futures/usdt/tickers?contract=${encodeURIComponent(sym)}`,
   })
 }

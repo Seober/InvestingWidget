@@ -6,7 +6,7 @@ import {
   AssetType,
   ItemConfig,
   SourceId,
-  ValidateResult
+  ValidateResult,
 } from '@shared/schema'
 import { PriceAdapter, RawTick } from './types'
 import { BinanceAdapter, createBinancePerp, createBinanceSpot } from './binance'
@@ -67,7 +67,7 @@ export class PriceService extends EventEmitter {
         gateSpot: this.gateSpot,
         gatePerp: this.gatePerp,
         finnhub: this.finnhub,
-        tv: this.tv
+        tv: this.tv,
       },
       () => this.tradingViewEnabled
     )
@@ -104,19 +104,15 @@ export class PriceService extends EventEmitter {
     }
   }
 
-  async validate(
-    itemDraft: Omit<ItemConfig, 'id'>,
-    signal?: AbortSignal
-  ): Promise<ValidateResult> {
+  async validate(itemDraft: Omit<ItemConfig, 'id'>, signal?: AbortSignal): Promise<ValidateResult> {
     const chain = this.resolver.chainFor(itemDraft.assetType)
     if (chain.length === 0) {
-      const isKr =
-        itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr'
+      const isKr = itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr'
       return {
         ok: false,
         error: isKr
           ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
-          : '지원하지 않는 자산 유형입니다.'
+          : '지원하지 않는 자산 유형입니다.',
       }
     }
     // @mathieuc/tradingview 라이브러리에 알려진 버그: validate 단계에서 임시 Market을
@@ -151,7 +147,7 @@ export class PriceService extends EventEmitter {
       ok: false,
       error: errors.length
         ? `시도한 거래소(${chain.map((a) => a.id).join(', ')})에서 모두 시세를 받지 못했습니다.`
-        : '시세 수신 실패'
+        : '시세 수신 실패',
     }
   }
 
@@ -222,9 +218,7 @@ export class PriceService extends EventEmitter {
     }
     this.subscribedItemIds.add(item.id)
     this.itemTypes.set(item.id, item.assetType)
-    subscribeWithErrorHandler(adapter, item, (msg) =>
-      this.emit('itemError', item.id, msg)
-    )
+    subscribeWithErrorHandler(adapter, item, (msg) => this.emit('itemError', item.id, msg))
   }
 
   private unsubscribeItem(itemId: string) {

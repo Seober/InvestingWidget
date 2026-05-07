@@ -7,7 +7,7 @@ const SOURCE_LABELS: Record<SourceId, string> = {
   'gateio-spot': 'Gate.io Spot',
   'gateio-perp': 'Gate.io Futures',
   finnhub: 'Finnhub',
-  tradingview: 'TradingView'
+  tradingview: 'TradingView',
 }
 
 interface Props {
@@ -29,7 +29,10 @@ function formatPrice(price: number, assetType: ItemConfig['assetType']): string 
   else if (abs >= 0.01) digits = 5
   else digits = 8
   const symbol = currencyPrefix(assetType)
-  return symbol + price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  return (
+    symbol +
+    price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  )
 }
 
 function currencyPrefix(assetType: ItemConfig['assetType']): string {
@@ -58,7 +61,7 @@ export function ItemRow({
   status,
   errorMessage,
   needsApiKey,
-  isExperimental
+  isExperimental,
 }: Props) {
   const [flash, setFlash] = useState<'up' | 'down' | null>(null)
   const prevPriceRef = useRef<number | undefined>(price)
@@ -76,7 +79,13 @@ export function ItemRow({
   }, [price])
 
   const changeClass =
-    changePct === undefined ? 'change-neutral' : changePct > 0 ? 'change-up' : changePct < 0 ? 'change-down' : 'change-neutral'
+    changePct === undefined
+      ? 'change-neutral'
+      : changePct > 0
+        ? 'change-up'
+        : changePct < 0
+          ? 'change-down'
+          : 'change-neutral'
 
   const sourceTooltip = item.source ? `시세 출처: ${SOURCE_LABELS[item.source]}` : ''
   const tooltip = errorMessage || sourceTooltip
@@ -84,11 +93,7 @@ export function ItemRow({
   const isPerp = item.assetType === 'crypto-perp'
 
   return (
-    <div
-      className={`row ${flash ? `flash-${flash}` : ''}`}
-      data-item-id={item.id}
-      title={tooltip}
-    >
+    <div className={`row ${flash ? `flash-${flash}` : ''}`} data-item-id={item.id} title={tooltip}>
       <span className="symbol">
         {baseLabel}
         {isPerp && <span className="suffix-perp">(f)</span>}
@@ -97,7 +102,9 @@ export function ItemRow({
         {status === 'reconnecting' && <span className="chip">⏳</span>}
         {status === 'closed' && !needsApiKey && <span className="chip chip-warn">⏸</span>}
       </span>
-      <span className="price">{price !== undefined ? formatPrice(price, item.assetType) : '—'}</span>
+      <span className="price">
+        {price !== undefined ? formatPrice(price, item.assetType) : '—'}
+      </span>
       <span className={`change ${changeClass}`}>{formatChange(changePct)}</span>
     </div>
   )

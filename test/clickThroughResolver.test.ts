@@ -11,17 +11,23 @@ function mkItem(over: Partial<ItemConfig>): ItemConfig {
     symbol: 'BTC',
     assetType: 'crypto-spot',
     quoteCurrency: 'USDT',
-    ...over
+    ...over,
   }
 }
 
 test('crypto-spot resolves with base/quote', () => {
-  const url = resolveClickThroughUrl(mkItem({ symbol: 'BTC', assetType: 'crypto-spot' }), baseConfig)
+  const url = resolveClickThroughUrl(
+    mkItem({ symbol: 'BTC', assetType: 'crypto-spot' }),
+    baseConfig
+  )
   assert.equal(url, 'https://www.binance.com/en/trade/BTC_USDT')
 })
 
 test('crypto-perp resolves to futures URL', () => {
-  const url = resolveClickThroughUrl(mkItem({ symbol: 'ETH', assetType: 'crypto-perp' }), baseConfig)
+  const url = resolveClickThroughUrl(
+    mkItem({ symbol: 'ETH', assetType: 'crypto-perp' }),
+    baseConfig
+  )
   assert.equal(url, 'https://www.binance.com/en/futures/ETHUSDT')
 })
 
@@ -54,7 +60,7 @@ test('item-level clickThroughUrl overrides template', () => {
     mkItem({
       symbol: 'BTC',
       assetType: 'crypto-spot',
-      clickThroughUrl: 'https://upbit.com/exchange?code=CRIX.UPBIT.KRW-{base}'
+      clickThroughUrl: 'https://upbit.com/exchange?code=CRIX.UPBIT.KRW-{base}',
     }),
     baseConfig
   )
@@ -62,10 +68,7 @@ test('item-level clickThroughUrl overrides template', () => {
 })
 
 test('custom quote currency replaces {quote}', () => {
-  const url = resolveClickThroughUrl(
-    mkItem({ symbol: 'BTC', quoteCurrency: 'BUSD' }),
-    baseConfig
-  )
+  const url = resolveClickThroughUrl(mkItem({ symbol: 'BTC', quoteCurrency: 'BUSD' }), baseConfig)
   assert.equal(url, 'https://www.binance.com/en/trade/BTC_BUSD')
 })
 

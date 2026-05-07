@@ -13,14 +13,14 @@ function migrate(raw: Partial<AppConfig> & { schemaVersion?: number }): AppConfi
       ...(raw.defaults ?? {}),
       clickThroughTemplates: {
         ...DEFAULT_CONFIG.defaults.clickThroughTemplates,
-        ...(raw.defaults?.clickThroughTemplates ?? {})
+        ...(raw.defaults?.clickThroughTemplates ?? {}),
       },
       opacityBounds: {
         ...DEFAULT_CONFIG.defaults.opacityBounds,
-        ...(raw.defaults?.opacityBounds ?? {})
-      }
+        ...(raw.defaults?.opacityBounds ?? {}),
+      },
     },
-    items: raw.items ?? []
+    items: raw.items ?? [],
   }
   merged.schemaVersion = CURRENT_SCHEMA_VERSION
   return merged
@@ -35,7 +35,7 @@ export class ConfigStore {
     this.store = new Store<AppConfig>({
       name: 'config',
       defaults: DEFAULT_CONFIG,
-      clearInvalidConfig: false
+      clearInvalidConfig: false,
     })
     this.memCache = migrate(this.store.store as Partial<AppConfig>)
     this.store.store = this.memCache

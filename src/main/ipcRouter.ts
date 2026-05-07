@@ -30,7 +30,10 @@ export function registerIpc(opts: {
     if (patch.finnhubApiKey !== undefined && patch.finnhubApiKey !== before.finnhubApiKey) {
       prices.setFinnhubApiKey(patch.finnhubApiKey)
     }
-    if (patch.tradingViewEnabled !== undefined && patch.tradingViewEnabled !== before.tradingViewEnabled) {
+    if (
+      patch.tradingViewEnabled !== undefined &&
+      patch.tradingViewEnabled !== before.tradingViewEnabled
+    ) {
       prices.setTradingViewEnabled(patch.tradingViewEnabled)
       prices.setItems(next.items)
     } else if (patch.items !== undefined) {
@@ -85,10 +88,7 @@ export function registerIpc(opts: {
 
   ipcMain.handle(
     IPC.SYMBOL_SEARCH,
-    async (
-      _e,
-      params: { assetType: AssetType; query: string; quoteCurrency?: string }
-    ) => {
+    async (_e, params: { assetType: AssetType; query: string; quoteCurrency?: string }) => {
       return searchSymbols(params.assetType, params.query, params.quoteCurrency)
     }
   )
@@ -101,11 +101,14 @@ export function registerIpc(opts: {
   ipcMain.on(IPC.RESIZE_HANDLE_MOVE, () => wm.dragEdgeResize())
   ipcMain.on(IPC.RESIZE_HANDLE_END, () => wm.endEdgeResize())
 
-  ipcMain.on(IPC.MODAL_OPEN, (_e, payload: { kind: 'add-item' | 'edit-item' | 'settings'; itemId?: string }) => {
-    const win = wm.window
-    if (!win) return
-    openModal({ parent: win, kind: payload.kind, itemId: payload.itemId })
-  })
+  ipcMain.on(
+    IPC.MODAL_OPEN,
+    (_e, payload: { kind: 'add-item' | 'edit-item' | 'settings'; itemId?: string }) => {
+      const win = wm.window
+      if (!win) return
+      openModal({ parent: win, kind: payload.kind, itemId: payload.itemId })
+    }
+  )
 
   ipcMain.handle(IPC.OPACITY_SET, (_e, value: number) => {
     wm.setOpacity(value)
@@ -124,12 +127,9 @@ export function registerIpc(opts: {
     return enabled
   })
 
-  ipcMain.handle(
-    IPC.WINDOW_SET_CONTENT_SIZE,
-    (_e, size: { width?: number; height?: number }) => {
-      wm.setContentSize(size)
-    }
-  )
+  ipcMain.handle(IPC.WINDOW_SET_CONTENT_SIZE, (_e, size: { width?: number; height?: number }) => {
+    wm.setContentSize(size)
+  })
 
   ipcMain.on(IPC.LINK_OPEN, (_e, itemId: string) => {
     const cfg = config.get()

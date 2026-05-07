@@ -29,7 +29,7 @@ export function App() {
   usePriceStream({
     onTick: addTick,
     onItemError: setItemError,
-    onAdapterStatus: setAdapterStatus
+    onAdapterStatus: setAdapterStatus,
   })
   useWheelOpacity(
     config?.window.opacity ?? 0.9,
@@ -62,7 +62,7 @@ export function App() {
 
   useDrag({
     onClick: handleRowClick,
-    onContextMenu: handleContextMenu
+    onContextMenu: handleContextMenu,
   })
 
   if (!config) return <div className="loading">로딩 중…</div>
@@ -85,7 +85,8 @@ export function App() {
           {items.map((item) => {
             const t = ticks[item.id]
             const needsApiKey =
-              (item.assetType === 'stock-us' || item.assetType === 'etf-us') && !config.finnhubApiKey
+              (item.assetType === 'stock-us' || item.assetType === 'etf-us') &&
+              !config.finnhubApiKey
             const isExperimental = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
             return (
               <ItemRow

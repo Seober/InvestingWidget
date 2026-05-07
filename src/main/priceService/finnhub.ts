@@ -129,7 +129,11 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
 
   private connectIfNeeded() {
     if (!this.apiKey) return
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    )
+      return
     if (this.destroyed) return
     this.setStatus('connecting')
     this.ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(this.apiKey)}`)
@@ -192,7 +196,13 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
     }
   }
 
-  private emitTickFor(itemId: string, symbol: string, price: number, pc: number | undefined, ts = Date.now()) {
+  private emitTickFor(
+    itemId: string,
+    symbol: string,
+    price: number,
+    pc: number | undefined,
+    ts = Date.now()
+  ) {
     const changePct = pc && pc > 0 ? ((price - pc) / pc) * 100 : 0
     this.emit('tick', itemId, { symbol, price, changePct, ts })
   }
@@ -249,17 +259,20 @@ export class FinnhubAdapter extends EventEmitter implements PriceAdapter {
 
   private ensurePcRefreshTimer() {
     if (this.pcRefreshTimer) return
-    this.pcRefreshTimer = setInterval(() => {
-      const now = Date.now()
-      for (const [sym, entry] of this.prevCloseCache) {
-        if (now - entry.fetchedAt >= PC_REFRESH_MS) {
-          void this.fetchPrevClose(sym)
+    this.pcRefreshTimer = setInterval(
+      () => {
+        const now = Date.now()
+        for (const [sym, entry] of this.prevCloseCache) {
+          if (now - entry.fetchedAt >= PC_REFRESH_MS) {
+            void this.fetchPrevClose(sym)
+          }
         }
-      }
-      for (const sym of this.symbolToItems.keys()) {
-        if (!this.prevCloseCache.has(sym)) void this.fetchPrevClose(sym)
-      }
-    }, 30 * 60 * 1000) // check every 30min
+        for (const sym of this.symbolToItems.keys()) {
+          if (!this.prevCloseCache.has(sym)) void this.fetchPrevClose(sym)
+        }
+      },
+      30 * 60 * 1000
+    ) // check every 30min
   }
 
   private stopPcRefreshTimer() {

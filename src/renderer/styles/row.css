@@ -31,13 +31,13 @@
 }
 
 .price {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 .change {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
   text-align: right;
   min-width: 64px;

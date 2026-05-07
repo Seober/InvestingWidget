@@ -10,7 +10,7 @@ const REFRESH_PRESETS = [
   { label: '0.5초 (기본)', value: 500 },
   { label: '1초', value: 1000 },
   { label: '2초', value: 2000 },
-  { label: '5초', value: 5000 }
+  { label: '5초', value: 5000 },
 ]
 
 export function buildContextMenuTemplate(
@@ -25,13 +25,13 @@ export function buildContextMenuTemplate(
   const itemMgmtSubmenu: MenuItemConstructorOptions[] = [
     {
       label: '항목 추가…',
-      click: () => openModal({ parent: win, kind: 'add-item' })
+      click: () => openModal({ parent: win, kind: 'add-item' }),
     },
     {
       label: '목록 편집…',
       enabled: cfg.items.length > 0,
-      click: () => openModal({ parent: win, kind: 'list-edit' })
-    }
+      click: () => openModal({ parent: win, kind: 'list-edit' }),
+    },
   ]
 
   const refreshSubmenu: MenuItemConstructorOptions[] = REFRESH_PRESETS.map((p) => ({
@@ -41,7 +41,7 @@ export function buildContextMenuTemplate(
     click: () => {
       config.set({ refreshIntervalMs: p.value })
       onChange()
-    }
+    },
   }))
 
   return [
@@ -52,11 +52,11 @@ export function buildContextMenuTemplate(
       label: '업데이트 확인…',
       click: () => {
         void updater.manualCheck()
-      }
+      },
     },
     {
       label: '고급 설정…',
-      click: () => openModal({ parent: win, kind: 'settings' })
+      click: () => openModal({ parent: win, kind: 'settings' }),
     },
     { type: 'separator' },
     {
@@ -66,7 +66,7 @@ export function buildContextMenuTemplate(
       click: (mi) => {
         wm.setAlwaysOnTop(mi.checked)
         onChange()
-      }
+      },
     },
     {
       label: '시작 시 자동 실행',
@@ -76,10 +76,10 @@ export function buildContextMenuTemplate(
         setAutoStart(mi.checked)
         config.updateWindow({ autoStart: mi.checked })
         onChange()
-      }
+      },
     },
     { type: 'separator' },
-    { label: '종료', click: () => app.quit() }
+    { label: '종료', click: () => app.quit() },
   ]
 }
 

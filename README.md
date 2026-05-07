@@ -22,12 +22,12 @@ Windows 데스크톱에서 항상 위에 떠 있는 미니 위젯. 암호화폐(
 
 ## 데이터 소스
 
-| 자산 유형 | 소스 | 인증 |
-|---|---|---|
-| 암호화폐 현물 | Binance · Gate.io WebSocket | 불필요 |
-| 암호화폐 선물 (USDT-M) | Gate.io WebSocket (KR IP에서 Binance 차단 회피) | 불필요 |
-| 미국 주식 / ETF | Finnhub WebSocket | **API 키 필요** ([finnhub.io](https://finnhub.io) 무료 발급) |
-| 한국 주식 / ETF | TradingView WebSocket (비공식) | 설정에서 옵트인. 실험적, 깨질 수 있음 |
+| 자산 유형              | 소스                                            | 인증                                                         |
+| ---------------------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| 암호화폐 현물          | Binance · Gate.io WebSocket                     | 불필요                                                       |
+| 암호화폐 선물 (USDT-M) | Gate.io WebSocket (KR IP에서 Binance 차단 회피) | 불필요                                                       |
+| 미국 주식 / ETF        | Finnhub WebSocket                               | **API 키 필요** ([finnhub.io](https://finnhub.io) 무료 발급) |
+| 한국 주식 / ETF        | TradingView WebSocket (비공식)                  | 설정에서 옵트인. 실험적, 깨질 수 있음                        |
 
 자동완성 보조 소스: Naver Finance autocomplete (한국 종목명/코드), Yahoo Finance search (미국).
 
@@ -78,6 +78,7 @@ npm run package:win
 ```
 
 산출물 (`release/`):
+
 - `InvestingWidget Setup x.y.z.exe` — NSIS 인스톨러
 - `latest.yml` — electron-updater manifest (자동 업데이트 진단용)
 - `InvestingWidget Setup x.y.z.exe.blockmap` — delta update 청크
@@ -102,13 +103,13 @@ WSL/Linux 빌드 시 `wine` + `wine32` 필요 (NSIS makensis 가 32-bit 바이�
 
 행마다 종목명 뒤에 작은 표시가 붙을 수 있습니다.
 
-| 표시 | 조건 | 의미 |
-|---|---|---|
-| `(f)` | 암호화폐 선물 자산 | 현물과 구분 (futures) |
-| 🔑 | 미국 주식·ETF + Finnhub 키 미등록 | 위 "API 등록 방법" 참고 |
-| ⚠ | 한국 주식·ETF | TradingView 비공식 어댑터 — 실험적 |
-| ⏳ | 어댑터 재연결 중 | WebSocket 복구 시도 중, 잠시 후 사라짐 |
-| ⏸ | 어댑터 침묵 (자기치유 폴링도 회복 못 함) | 거래량 매우 적거나 잘못된 심볼 의심 |
+| 표시  | 조건                                     | 의미                                   |
+| ----- | ---------------------------------------- | -------------------------------------- |
+| `(f)` | 암호화폐 선물 자산                       | 현물과 구분 (futures)                  |
+| 🔑    | 미국 주식·ETF + Finnhub 키 미등록        | 위 "API 등록 방법" 참고                |
+| ⚠     | 한국 주식·ETF                            | TradingView 비공식 어댑터 — 실험적     |
+| ⏳    | 어댑터 재연결 중                         | WebSocket 복구 시도 중, 잠시 후 사라짐 |
+| ⏸     | 어댑터 침묵 (자기치유 폴링도 회복 못 함) | 거래량 매우 적거나 잘못된 심볼 의심    |
 
 행에 마우스 오버하면 시세 출처(Binance Spot, Gate.io Futures, Finnhub, TradingView 등)가 툴팁으로 표시됩니다.
 

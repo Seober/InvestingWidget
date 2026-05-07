@@ -15,7 +15,7 @@ const DIMS: Record<ModalKind, ModalDims> = {
   'edit-item': { width: 480, height: 600, title: '항목 편집' },
   settings: { width: 540, height: 720, title: '설정' },
   'list-edit': { width: 540, height: 640, title: '목록 편집' },
-  'updater-progress': { width: 440, height: 240, title: '업데이트 다운로드' }
+  'updater-progress': { width: 440, height: 240, title: '업데이트 다운로드' },
 }
 
 const openModals = new Map<ModalKind, BrowserWindow>()
@@ -55,8 +55,8 @@ export function openModal(opts: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
-    }
+      sandbox: false,
+    },
   })
 
   modal.removeMenu()
@@ -77,7 +77,7 @@ export function openModal(opts: {
     modal.loadURL(`${process.env['ELECTRON_RENDERER_URL']}${hash}`)
   } else {
     modal.loadFile(join(__dirname, '../renderer/index.html'), {
-      hash: hash.replace(/^#/, '')
+      hash: hash.replace(/^#/, ''),
     })
   }
 

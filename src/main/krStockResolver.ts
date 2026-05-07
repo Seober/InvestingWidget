@@ -28,10 +28,7 @@ function parseMatch(it: any): KrStockMatch | null {
   return { code, name, market }
 }
 
-export async function searchKrStock(
-  query: string,
-  limit: number = 10
-): Promise<KrStockMatch[]> {
+export async function searchKrStock(query: string, limit: number = 10): Promise<KrStockMatch[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
 
@@ -41,8 +38,8 @@ export async function searchKrStock(
     res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
-        Accept: 'application/json'
-      }
+        Accept: 'application/json',
+      },
     })
   } catch (err: any) {
     console.warn(`[kr-resolver] network error for "${trimmed}":`, err?.message ?? err)

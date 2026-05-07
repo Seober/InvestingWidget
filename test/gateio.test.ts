@@ -14,7 +14,7 @@ test(
       id: 'gate-btc-test',
       symbol: 'BTC',
       assetType: 'crypto-spot',
-      quoteCurrency: 'USDT'
+      quoteCurrency: 'USDT',
     }
     const tick = await new Promise<{ price: number; changePct: number }>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('timeout')), 10_000)
@@ -40,7 +40,7 @@ test(
       id: 'gate-btc-perp-test',
       symbol: 'BTC',
       assetType: 'crypto-perp',
-      quoteCurrency: 'USDT'
+      quoteCurrency: 'USDT',
     }
     const got = await new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => resolve(false), 10_000)

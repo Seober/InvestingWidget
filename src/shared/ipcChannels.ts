@@ -37,7 +37,7 @@ export const IPC = {
   UPDATE_DOWNLOADED: 'update:downloaded',
   UPDATE_ACCEPT_INSTALL: 'update:acceptInstall',
 
-  APP_QUIT: 'app:quit'
+  APP_QUIT: 'app:quit',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

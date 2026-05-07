@@ -7,7 +7,7 @@ const ASSET_LABELS: Record<AssetType, string> = {
   'stock-us': '미국주식',
   'etf-us': '미국ETF',
   'stock-kr': '한국주식',
-  'etf-kr': '한국ETF'
+  'etf-kr': '한국ETF',
 }
 
 interface Props {
@@ -122,9 +122,7 @@ export function ListEditModal({ initialItems, onClose, onSave, onEditItem }: Pro
           <div className="list-edit-rows">
             {items.length === 0 && <div className="empty">항목이 없습니다.</div>}
             {items.map((it, idx) => {
-              const label = it.displayName?.trim()
-                ? `${it.displayName} (${it.symbol})`
-                : it.symbol
+              const label = it.displayName?.trim() ? `${it.displayName} (${it.symbol})` : it.symbol
               const isDragging = draggingIdx === idx
               return (
                 <div

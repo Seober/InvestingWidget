@@ -57,8 +57,8 @@ export function App() {
   const autofitHeight = useCallback(() => {
     const rowsH = rowsRef.current?.scrollHeight ?? 0
     const headerH = headerRef.current?.offsetHeight ?? 0
-    // .app vertical padding 4px*2 = 8, .header margin-bottom 2 (styles.css)
-    const target = 8 + headerH + 2 + rowsH
+    // .app vertical padding 4*2 = 8, .header margin-bottom 2, .app border 1*2 = 2
+    const target = 8 + headerH + 2 + rowsH + 2
     void window.api.window.setContentSize({ height: target })
   }, [])
 

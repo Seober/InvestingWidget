@@ -22,13 +22,24 @@ interface Props {
   onAutofitWidth: () => void
 }
 
+const DRAG_THRESHOLD_PX = 5
+
 export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
+  const startedRef = useRef<{ edge: ResizeEdge; x: number; y: number } | null>(null)
   const draggingRef = useRef(false)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
-    const onMove = () => {
-      if (!draggingRef.current) return
+    const onMove = (e: MouseEvent) => {
+      const s = startedRef.current
+      if (!s) return
+      if (!draggingRef.current) {
+        const dx = e.screenX - s.x
+        const dy = e.screenY - s.y
+        if (Math.hypot(dx, dy) <= DRAG_THRESHOLD_PX) return
+        draggingRef.current = true
+        window.api.resize.start(s.edge)
+      }
       if (rafRef.current === null) {
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null
@@ -37,13 +48,16 @@ export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
       }
     }
     const onUp = () => {
-      if (!draggingRef.current) return
+      const wasDragging = draggingRef.current
+      startedRef.current = null
       draggingRef.current = false
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)
         rafRef.current = null
       }
-      window.api.resize.end()
+      if (wasDragging) {
+        window.api.resize.end()
+      }
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -57,8 +71,8 @@ export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
     if (e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
-    draggingRef.current = true
-    window.api.resize.start(edge)
+    startedRef.current = { edge, x: e.screenX, y: e.screenY }
+    draggingRef.current = false
   }
 
   const handleDoubleClick = (edge: ResizeEdge) => (e: React.MouseEvent) => {

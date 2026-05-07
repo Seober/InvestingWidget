@@ -17,14 +17,9 @@ const HANDLES: HandleSpec[] = [
   { edge: 'br', cls: 'resize-br' }
 ]
 
-interface Props {
-  onAutofitHeight: () => void
-  onAutofitWidth: () => void
-}
-
 const DRAG_THRESHOLD_PX = 5
 
-export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
+export function ResizeHandles() {
   const startedRef = useRef<{ edge: ResizeEdge; x: number; y: number } | null>(null)
   const draggingRef = useRef(false)
   const rafRef = useRef<number | null>(null)
@@ -69,22 +64,11 @@ export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
 
   const handleMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
     if (e.button !== 0) return
-    e.preventDefault()
+    // preventDefault 제거 — handle 영역엔 text selection·focus 변경 같은 default action 없음.
+    // dblclick 발화 시퀀스에 미세 영향 가능성 배제 차원.
     e.stopPropagation()
     startedRef.current = { edge, x: e.screenX, y: e.screenY }
     draggingRef.current = false
-  }
-
-  const handleDoubleClick = (edge: ResizeEdge) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (edge === 'top' || edge === 'bottom') {
-      onAutofitHeight()
-    } else if (edge === 'left' || edge === 'right') {
-      onAutofitWidth()
-    } else {
-      onAutofitHeight()
-      onAutofitWidth()
-    }
   }
 
   return (
@@ -93,8 +77,8 @@ export function ResizeHandles({ onAutofitHeight, onAutofitWidth }: Props) {
         <div
           key={edge}
           className={`resize-handle ${cls}`}
+          data-resize-edge={edge}
           onMouseDown={handleMouseDown(edge)}
-          onDoubleClick={handleDoubleClick(edge)}
         />
       ))}
     </>

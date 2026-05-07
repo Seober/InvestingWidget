@@ -54,15 +54,24 @@ export function App() {
     config?.defaults.opacityBounds ?? { min: 0.15, max: 1.0 }
   )
 
+  const flashAutofitFeedback = useCallback(() => {
+    const el = appRef.current
+    if (!el) return
+    el.classList.add('autofitting')
+    window.setTimeout(() => el.classList.remove('autofitting'), 220)
+  }, [])
+
   const autofitHeight = useCallback(() => {
+    flashAutofitFeedback()
     const rowsH = rowsRef.current?.scrollHeight ?? 0
     const headerH = headerRef.current?.offsetHeight ?? 0
     // .app vertical padding 4*2 = 8, .header margin-bottom 2, .app border 1*2 = 2
     const target = 8 + headerH + 2 + rowsH + 2
     void window.api.window.setContentSize({ height: target })
-  }, [])
+  }, [flashAutofitFeedback])
 
   const autofitWidth = useCallback(() => {
+    flashAutofitFeedback()
     const el = appRef.current
     if (!el) return
     el.classList.add('measuring-width')
@@ -70,7 +79,29 @@ export function App() {
     const naturalW = el.offsetWidth + 2
     el.classList.remove('measuring-width')
     void window.api.window.setContentSize({ width: naturalW })
-  }, [])
+  }, [flashAutofitFeedback])
+
+  useEffect(() => {
+    // React onDoubleClick prop 대신 글로벌 window dblclick listener 사용 — React 합성 이벤트가
+    // 일부 환경(transparent + frameless + handle div 조합)에서 발화 누락 가능성 회피.
+    const onDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      const handle = target?.closest('.resize-handle')
+      if (!handle) return
+      const edge = handle.getAttribute('data-resize-edge')
+      if (!edge) return
+      if (edge === 'top' || edge === 'bottom') {
+        autofitHeight()
+      } else if (edge === 'left' || edge === 'right') {
+        autofitWidth()
+      } else {
+        autofitHeight()
+        autofitWidth()
+      }
+    }
+    window.addEventListener('dblclick', onDblClick)
+    return () => window.removeEventListener('dblclick', onDblClick)
+  }, [autofitHeight, autofitWidth])
 
   const findItemId = (target: EventTarget | null): string | null => {
     let el = target as HTMLElement | null
@@ -98,7 +129,7 @@ export function App() {
 
   return (
     <>
-      <ResizeHandles onAutofitHeight={autofitHeight} onAutofitWidth={autofitWidth} />
+      <ResizeHandles />
       <div ref={appRef} className={`app ${themeClass}`} style={{ fontSize: config.fontSize }}>
         <div ref={headerRef} className="header">
           <span>종목</span>

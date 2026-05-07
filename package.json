@@ -6,6 +6,7 @@
   "author": "leejun51",
   "license": "MIT",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "preview": "electron-vite preview",
@@ -32,6 +33,7 @@
     "electron": "^32.1.0",
     "electron-builder": "^25.0.5",
     "electron-vite": "^2.3.0",
+    "patch-package": "^8.0.1",
     "tsx": "^4.21.0",
     "typescript": "^5.5.4",
     "vite": "^5.4.6"

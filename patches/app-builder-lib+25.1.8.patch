@@ -1,0 +1,37 @@
+diff --git a/node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh b/node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh
+index b7f4752..cbdcc9c 100644
+--- a/node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh
++++ b/node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh
+@@ -20,7 +20,7 @@
+   !endif
+ 
+   !ifdef allowToChangeInstallationDirectory
+-    !include StrContains.nsh
++    # patched: StrContains.nsh include 제거 — instFilesPre 가 StrContains 안 쓰는 마지막 segment 정확 검사로 변경됨
+ 
+     !insertmacro skipPageIfUpdated
+     !insertmacro MUI_PAGE_DIRECTORY
+@@ -30,11 +30,20 @@
+     !define MUI_PAGE_CUSTOMFUNCTION_PRE instFilesPre
+ 
+     # sanitize the MUI_PAGE_DIRECTORY result to make sure it has a application name sub-folder
++    # patched: 부분 문자열(StrContains) 매치 → 마지막 segment 정확 매치로 변경.
++    # 부분 매치는 InvestingWidget_자료 같이 우연 포함 경로에서 sanitize 무시 → uninstall(RMDir /r) 시
++    # 다른 파일까지 함께 삭제 위험. 마지막 segment 가 PRODUCT_FILENAME 인지만 정확 검사.
+     Function instFilesPre
+-      ${StrContains} $0 "${APP_FILENAME}" $INSTDIR
+-      ${If} $0 == ""
++      Push $0
++      Push $1
++      StrLen $0 "${APP_FILENAME}"
++      IntOp $0 $0 + 1
++      StrCpy $1 $INSTDIR "" -$0
++      ${If} $1 != "\${APP_FILENAME}"
+         StrCpy $INSTDIR "$INSTDIR\${APP_FILENAME}"
+-      ${endIf}
++      ${EndIf}
++      Pop $1
++      Pop $0
+     FunctionEnd
+   !endif
+ 

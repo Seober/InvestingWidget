@@ -55,14 +55,14 @@ Windows 데스크톱에서 항상 위에 떠 있는 미니 위젯. 암호화폐(
 
 ### 다운로드·설치 (사용자)
 
-1. [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget Setup x.y.z.exe` 다운로드
-2. 더블클릭 → NSIS 마법사 진행:
+1. [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget-Setup-x.y.z.zip` 다운로드
+2. 압축 해제 → 안의 `.exe` 더블클릭 → NSIS 마법사 진행:
    - **설치 모드**: 현재 사용자 전용 (관리자 권한 불필요)
    - **설치 경로 선택** (default `%LOCALAPPDATA%\Programs\InvestingWidget`) — 다른 경로 선택 시 끝에 자동으로 `InvestingWidget` 디렉토리가 추가됨
    - **Components 페이지**: 바탕화면 바로가기·시작메뉴 바로가기 체크박스 직접 선택
 3. 설치 완료 후 자동 실행. 이후 시작메뉴/바탕화면 바로가기로 실행
 
-> **첫 실행 시 SmartScreen 경고**: 코드 서명 인증서가 없어서 "Windows에서 PC를 보호했습니다" 경고가 뜰 수 있습니다. **추가 정보 → 실행** 으로 진행하세요.
+> **첫 실행 시 SmartScreen 경고** ("Windows에서 PC를 보호했습니다"): 코드 서명 인증서가 없어서 경고가 뜰 수 있습니다. **추가 정보 → 실행** 으로 진행하세요. 한 번 설치 후 자동 업데이트는 SmartScreen 영향 X (electron-updater 가 직접 다운로드).
 
 ### 개발 모드
 
@@ -79,11 +79,12 @@ npm run package:win
 
 산출물 (`release/`):
 
-- `InvestingWidget Setup x.y.z.exe` — NSIS 인스톨러
+- `InvestingWidget-Setup-x.y.z.exe` — NSIS 인스톨러 (자동 업데이트 backbone)
+- `InvestingWidget-Setup-x.y.z.zip` — `.exe` 의 zip wrapper (Edge SmartScreen 다운로드 차단 우회용)
 - `latest.yml` — electron-updater manifest (자동 업데이트 진단용)
-- `InvestingWidget Setup x.y.z.exe.blockmap` — delta update 청크
+- `InvestingWidget-Setup-x.y.z.exe.blockmap` — delta update 청크
 
-WSL/Linux 빌드 시 `wine` + `wine32` 필요 (NSIS makensis 가 32-bit 바이너리). Native Windows 빌드는 GitHub Actions 의 `windows-latest` runner 가 처리 (`.github/workflows/release.yml`) — tag push 시 자동 release 발행.
+WSL/Linux 빌드 시 `wine` + `wine32` 필요 (NSIS makensis 가 32-bit 바이너리). Native Windows 빌드는 GitHub Actions 의 `windows-latest` runner 가 처리 (`.github/workflows/release.yml`) — tag push 시 자동 release 발행 (zip wrapper 도 자동 첨부).
 
 ## 사용 방법
 

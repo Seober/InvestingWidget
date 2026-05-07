@@ -9,9 +9,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const NSH = resolve(
-  'node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh'
-)
+const NSH = resolve('node_modules/app-builder-lib/templates/nsis/assistedInstaller.nsh')
 
 if (!existsSync(NSH)) {
   console.error(

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { AssetType, SymbolSuggestion } from '@shared/schema'
 
 const DEBOUNCE_MS = 250
@@ -28,6 +28,8 @@ export function SymbolAutocomplete({
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const [loading, setLoading] = useState(false)
+  // ARIA combobox-listbox 연결을 위한 unique id
+  const listboxId = useId()
 
   const containerRef = useRef<HTMLDivElement>(null)
   const requestIdRef = useRef(0)
@@ -154,9 +156,13 @@ export function SymbolAutocomplete({
         role="combobox"
         aria-expanded={showDropdown}
         aria-autocomplete="list"
+        aria-controls={listboxId}
+        aria-activedescendant={
+          showDropdown && suggestions.length > 0 ? `${listboxId}-opt-${highlight}` : undefined
+        }
       />
       {showDropdown && (
-        <ul className="autocomplete-dropdown" role="listbox">
+        <ul className="autocomplete-dropdown" role="listbox" id={listboxId}>
           {loading && <li className="autocomplete-loading">검색 중…</li>}
           {!loading && suggestions.length === 0 && value.trim().length > 0 && (
             <li className="autocomplete-empty">결과 없음</li>
@@ -165,6 +171,7 @@ export function SymbolAutocomplete({
             suggestions.map((s, i) => (
               <li
                 key={`${s.symbol}-${s.source ?? 'no-source'}`}
+                id={`${listboxId}-opt-${i}`}
                 role="option"
                 aria-selected={i === highlight}
                 className={i === highlight ? 'highlighted' : ''}

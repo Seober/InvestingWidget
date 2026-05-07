@@ -133,7 +133,13 @@ export function ListEditModal({ initialItems, onClose, onSave, onEditItem }: Pro
                   onDragOver={(e) => onDragOver(e, idx)}
                   onDragEnd={onDragEnd}
                 >
-                  <span className="list-edit-handle-cell" title="끌어서 순서 변경">
+                  <span
+                    className="list-edit-handle-cell"
+                    role="button"
+                    tabIndex={-1}
+                    aria-label="끌어서 순서 변경"
+                    title="끌어서 순서 변경"
+                  >
                     ⋮⋮
                   </span>
                   <input

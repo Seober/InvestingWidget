@@ -23,6 +23,12 @@ interface PerpPair {
 let spotCache: { data: SpotPair[]; ts: number } | null = null
 let perpCache: { data: PerpPair[]; ts: number } | null = null
 
+// app 종료 시 명시적 정리 — 메모리 누수 방지·테스트 격리.
+export function clearSearchCache(): void {
+  spotCache = null
+  perpCache = null
+}
+
 async function fetchJson(url: string): Promise<any> {
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)

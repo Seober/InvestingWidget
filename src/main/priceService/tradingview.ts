@@ -231,8 +231,12 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   }
 
   private toTVSymbol(rawSymbol: string): string {
-    if (rawSymbol.includes(':')) return rawSymbol.toUpperCase()
-    return `KRX:${rawSymbol.toUpperCase()}`
+    // 일부 KR 종목(엠게임 058630 등) 이 TV 데이터 피드에서 KRX: prefix 만 인식하고
+    // KOSDAQ:/KOSPI: 를 reject 하므로 콜론 prefix 무시하고 코드만 추출해 KRX: 로 통일.
+    // KRX 가 한국 통합 거래소 코드라 KOSPI/KOSDAQ/KONEX 모든 종목 포괄.
+    const upper = rawSymbol.toUpperCase()
+    const code = upper.includes(':') ? upper.split(':')[1] : upper
+    return `KRX:${code}`
   }
 
   private setStatus(s: AdapterStatus, message?: string) {

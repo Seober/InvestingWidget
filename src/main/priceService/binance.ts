@@ -1,7 +1,5 @@
-import { EventEmitter } from 'node:events'
-import WebSocket from 'ws'
-import { AdapterStatus, ItemConfig } from '@shared/schema'
-import { PriceAdapter } from './types'
+import { ItemConfig } from '@shared/schema'
+import { BaseWsAdapter } from './baseWsAdapter'
 
 interface BinanceConfig {
   id: 'binance-spot' | 'binance-perp'
@@ -9,22 +7,15 @@ interface BinanceConfig {
   restTickerUrl: (symbol: string) => string
 }
 
-const RECONNECT_INITIAL_MS = 1000
-const RECONNECT_MAX_MS = 30_000
 // Self-healing poll: see gateio.ts for rationale. Binance ticker streams are
 // active for major pairs, but symmetry with Gate.io guards against silent
 // REST failures and dead WS subscriptions on edge symbols.
 const POLL_CHECK_MS = 15_000
 const POLL_REFETCH_THRESHOLD_MS = 30_000
 
-export class BinanceAdapter extends EventEmitter implements PriceAdapter {
+export class BinanceAdapter extends BaseWsAdapter {
   readonly id: 'binance-spot' | 'binance-perp'
-  private ws: WebSocket | null = null
-  private currentStatus: AdapterStatus = 'closed'
-  private reconnectDelayMs = RECONNECT_INITIAL_MS
-  private reconnectTimer: NodeJS.Timeout | null = null
   private msgIdCounter = 1
-  private destroyed = false
 
   // itemId -> stream key (e.g. "btcusdt@ticker")
   private itemToStream = new Map<string, string>()
@@ -39,7 +30,7 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
     this.id = cfg.id
   }
 
-  subscribe(item: ItemConfig) {
+  subscribe(item: ItemConfig): void {
     const stream = this.itemToStreamKey(item)
     this.itemToStream.set(item.id, stream)
     let set = this.streamToItems.get(stream)
@@ -58,66 +49,7 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
     }
   }
 
-  private async fetchInitialTick(stream: string) {
-    const symbolUpper = stream.replace(/@ticker$/, '').toUpperCase()
-    try {
-      const res = await fetch(this.cfg.restTickerUrl(symbolUpper))
-      if (!res.ok) {
-        console.warn(`[${this.id}] REST ${symbolUpper} failed: HTTP ${res.status}`)
-        // Invalid symbol (HTTP 400) → fast-fail subscribed items so validate's
-        // tryAdapter doesn't wait the full 5s timeout before falling back.
-        // WS for invalid streams stays silent indefinitely.
-        if (res.status === 400) {
-          const items = this.streamToItems.get(stream)
-          if (items) {
-            for (const itemId of items) {
-              this.emit('itemError', itemId, `${this.id}에 없는 심볼입니다`)
-            }
-          }
-        }
-        return
-      }
-      const data = (await res.json()) as any
-      const price = Number(data?.lastPrice)
-      const changePct = Number(data?.priceChangePercent)
-      if (!Number.isFinite(price) || price <= 0) {
-        console.warn(`[${this.id}] REST ${symbolUpper} invalid lastPrice="${data?.lastPrice}"`)
-        return
-      }
-      const items = this.streamToItems.get(stream)
-      if (!items) return
-      const ts = Date.now()
-      const finalChange = Number.isFinite(changePct) ? changePct : 0
-      this.lastTickTs.set(stream, ts)
-      for (const itemId of items) {
-        this.emit('tick', itemId, { symbol: symbolUpper, price, changePct: finalChange, ts })
-      }
-    } catch (err: any) {
-      console.warn(`[${this.id}] REST ${symbolUpper} threw:`, err?.message ?? err)
-    }
-  }
-
-  private ensurePollTimer() {
-    if (this.pollTimer) return
-    this.pollTimer = setInterval(() => {
-      const now = Date.now()
-      for (const stream of this.streamToItems.keys()) {
-        const last = this.lastTickTs.get(stream) ?? 0
-        if (now - last > POLL_REFETCH_THRESHOLD_MS) {
-          void this.fetchInitialTick(stream)
-        }
-      }
-    }, POLL_CHECK_MS)
-  }
-
-  private stopPollTimer() {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer)
-      this.pollTimer = null
-    }
-  }
-
-  unsubscribe(itemId: string) {
+  unsubscribe(itemId: string): void {
     const stream = this.itemToStream.get(itemId)
     if (!stream) return
     this.itemToStream.delete(itemId)
@@ -136,76 +68,32 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
     }
   }
 
-  status() {
-    return this.currentStatus
+  protected getWsUrl(): string {
+    return this.cfg.baseUrl
   }
 
-  async destroy() {
-    this.destroyed = true
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
+  protected hasSubscriptions(): boolean {
+    return this.streamToItems.size > 0
+  }
+
+  protected onWsOpen(): void {
+    const streams = Array.from(this.streamToItems.keys())
+    if (streams.length) {
+      this.sendSubscribe(streams)
+      // After (re)connect, refetch REST so the UI recovers immediately.
+      for (const stream of streams) void this.fetchInitialTick(stream)
     }
+  }
+
+  protected onDestroy(): void {
     this.stopPollTimer()
-    this.closeWs()
   }
 
-  private itemToStreamKey(item: ItemConfig): string {
-    const quote = (item.quoteCurrency ?? 'USDT').toUpperCase()
-    const base = item.symbol.toUpperCase()
-    const sym = `${base}${quote}`.toLowerCase()
-    return `${sym}@ticker`
-  }
-
-  private connectIfNeeded() {
-    if (
-      this.ws &&
-      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
-    )
-      return
-    if (this.destroyed) return
-    this.setStatus('connecting')
-    this.ws = new WebSocket(this.cfg.baseUrl)
-
-    this.ws.on('open', () => {
-      this.setStatus('open')
-      this.reconnectDelayMs = RECONNECT_INITIAL_MS
-      const streams = Array.from(this.streamToItems.keys())
-      if (streams.length) {
-        this.sendSubscribe(streams)
-        // After (re)connect, refetch REST so the UI recovers immediately.
-        for (const stream of streams) void this.fetchInitialTick(stream)
-      }
-    })
-
-    this.ws.on('message', (data) => {
-      try {
-        const msg = JSON.parse(String(data))
-        this.handleMessage(msg)
-      } catch {
-        // ignore non-JSON frames (pings handled by ws automatically)
-      }
-    })
-
-    this.ws.on('close', () => {
-      this.ws = null
-      if (!this.destroyed && this.streamToItems.size > 0) {
-        this.setStatus('reconnecting')
-        this.scheduleReconnect()
-      } else {
-        this.setStatus('closed')
-      }
-    })
-
-    this.ws.on('error', () => {
-      // close handler will run reconnect
-    })
-  }
-
-  private handleMessage(msg: any) {
+  protected handleMessage(msg: unknown): void {
     // Combined stream payload: { stream: "btcusdt@ticker", data: {...} }
-    const stream: string | undefined = msg?.stream
-    const data = msg?.data
+    const obj = msg as { stream?: string; data?: { c?: unknown; P?: unknown; s?: string } } | null
+    const stream = obj?.stream
+    const data = obj?.data
     if (!stream || !data) return
     const items = this.streamToItems.get(stream)
     if (!items || items.size === 0) return
@@ -216,46 +104,83 @@ export class BinanceAdapter extends EventEmitter implements PriceAdapter {
     const ts = Date.now()
     this.lastTickTs.set(stream, ts)
     for (const itemId of items) {
-      this.emit('tick', itemId, { symbol: data.s, price, changePct, ts })
+      this.emit('tick', itemId, { symbol: data.s ?? '', price, changePct, ts })
     }
   }
 
-  private sendSubscribe(streams: string[]) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return
-    this.ws.send(JSON.stringify({ method: 'SUBSCRIBE', params: streams, id: this.msgIdCounter++ }))
-  }
-
-  private sendUnsubscribe(streams: string[]) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return
-    this.ws.send(
-      JSON.stringify({ method: 'UNSUBSCRIBE', params: streams, id: this.msgIdCounter++ })
-    )
-  }
-
-  private scheduleReconnect() {
-    if (this.reconnectTimer) return
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null
-      this.reconnectDelayMs = Math.min(this.reconnectDelayMs * 2, RECONNECT_MAX_MS)
-      this.connectIfNeeded()
-    }, this.reconnectDelayMs)
-  }
-
-  private closeWs() {
-    if (this.ws) {
-      try {
-        this.ws.close()
-      } catch {
-        // ignore
+  private async fetchInitialTick(stream: string): Promise<void> {
+    const symbolUpper = stream.replace(/@ticker$/, '').toUpperCase()
+    try {
+      const res = await fetch(this.cfg.restTickerUrl(symbolUpper))
+      if (!res.ok) {
+        console.warn(`[${this.id}] REST ${symbolUpper} failed: HTTP ${res.status}`)
+        // Invalid symbol (HTTP 400) → fast-fail subscribed items so validate's
+        // tryAdapter doesn't wait the full 5s timeout before falling back.
+        // WS for invalid streams stays silent indefinitely.
+        if (res.status === 400) {
+          const items = this.streamToItems.get(stream)
+          if (items) {
+            for (const itemId of items) {
+              this.emit('itemError', itemId, `${this.id}에 없는 심볼입니다`)
+            }
+          }
+        }
+        return
       }
-      this.ws = null
+      const data = (await res.json()) as { lastPrice?: unknown; priceChangePercent?: unknown }
+      const price = Number(data?.lastPrice)
+      const changePct = Number(data?.priceChangePercent)
+      if (!Number.isFinite(price) || price <= 0) {
+        console.warn(`[${this.id}] REST ${symbolUpper} invalid lastPrice="${data?.lastPrice}"`)
+        return
+      }
+      const items = this.streamToItems.get(stream)
+      if (!items) return
+      const ts = Date.now()
+      const finalChange = Number.isFinite(changePct) ? changePct : 0
+      this.lastTickTs.set(stream, ts)
+      for (const itemId of items) {
+        this.emit('tick', itemId, { symbol: symbolUpper, price, changePct: finalChange, ts })
+      }
+    } catch (err: unknown) {
+      const msg = (err as { message?: string } | null)?.message ?? String(err)
+      console.warn(`[${this.id}] REST ${symbolUpper} threw:`, msg)
     }
   }
 
-  private setStatus(s: AdapterStatus, message?: string) {
-    if (s === this.currentStatus) return
-    this.currentStatus = s
-    this.emit('status', s, message)
+  private ensurePollTimer(): void {
+    if (this.pollTimer) return
+    this.pollTimer = setInterval(() => {
+      const now = Date.now()
+      for (const stream of this.streamToItems.keys()) {
+        const last = this.lastTickTs.get(stream) ?? 0
+        if (now - last > POLL_REFETCH_THRESHOLD_MS) {
+          void this.fetchInitialTick(stream)
+        }
+      }
+    }, POLL_CHECK_MS)
+  }
+
+  private stopPollTimer(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer)
+      this.pollTimer = null
+    }
+  }
+
+  private itemToStreamKey(item: ItemConfig): string {
+    const quote = (item.quoteCurrency ?? 'USDT').toUpperCase()
+    const base = item.symbol.toUpperCase()
+    const sym = `${base}${quote}`.toLowerCase()
+    return `${sym}@ticker`
+  }
+
+  private sendSubscribe(streams: string[]): void {
+    this.sendWs({ method: 'SUBSCRIBE', params: streams, id: this.msgIdCounter++ })
+  }
+
+  private sendUnsubscribe(streams: string[]): void {
+    this.sendWs({ method: 'UNSUBSCRIBE', params: streams, id: this.msgIdCounter++ })
   }
 }
 

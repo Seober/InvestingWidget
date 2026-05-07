@@ -5,14 +5,11 @@ import type {
   AssetType,
   ItemConfig,
   ResizeEdge,
+  StatusEvent,
   SymbolSuggestion,
   Tick,
   ValidateResult
 } from '@shared/schema'
-
-type StatusEvent =
-  | { itemId: string; status: 'closed'; message?: string }
-  | { adapterId: string; status: string; message?: string }
 
 const api = {
   config: {

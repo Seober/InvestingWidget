@@ -75,7 +75,7 @@ export function ItemRow({
       return () => clearTimeout(t)
     }
     prevPriceRef.current = price
-    return
+    return undefined
   }, [price])
 
   const changeClass =

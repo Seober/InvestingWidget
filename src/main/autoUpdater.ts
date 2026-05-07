@@ -8,10 +8,11 @@ import { openModal } from './modalWindow'
 // 자동 업데이트 매니저 — electron-updater 의 GitHub Releases 기반 자동 업데이트.
 // 사용자 동의 우선 — autoDownload·autoInstallOnAppQuit 모두 false. 다운로드·재시작·적용 모두 사용자 명시 동의.
 //
-// Stage 3: native showMessageBox 두 단계 구현.
-// Stage 5: download progress modal UI 추가 — update-available 동의 시 progress modal 열고
-// download-progress 이벤트를 modal 에 IPC 전달. modal close 시 백그라운드 다운로드 계속,
-// update-downloaded 시 modal 살아있으면 IPC 로 ready 상태 전환·null 이면 native dialog 안전망.
+// 흐름:
+// 1. update-available 이벤트 → native showMessageBox "다운로드?" 동의 시 progress modal 열고 downloadUpdate
+// 2. download-progress 이벤트 → progress modal 살아있으면 IPC 전달, 없으면 무시 (백그라운드 다운로드 계속)
+// 3. update-downloaded 이벤트 → modal 살아있으면 IPC 로 ready 상태 전환, 없으면 native dialog 안전망
+// 4. modal 의 재시작 버튼 또는 native dialog 의 재시작 → quitAndInstall
 export class UpdaterManager {
   private progressModal: BrowserWindow | null = null
 

@@ -3,11 +3,23 @@ import { AdapterStatus, ItemConfig } from '@shared/schema'
 import { t } from '@shared/i18n/messages'
 import { PriceAdapter } from './types'
 
+// @mathieuc/tradingview 의 외부 응답·콜백 인자는 unknown — 사용 시점에 narrow.
+interface TVTickData {
+  lp?: unknown
+  chp?: unknown
+  [key: string]: unknown
+}
+
+interface TVError {
+  message?: string
+  [key: string]: unknown
+}
+
 interface TVMarketHandle {
   close: () => void
-  onData: (cb: (data: any) => void) => void
+  onData: (cb: (data: TVTickData) => void) => void
   onLoaded?: (cb: () => void) => void
-  onError?: (cb: (err: any) => void) => void
+  onError?: (cb: (err: TVError) => void) => void
 }
 
 interface TVQuoteSession {
@@ -18,7 +30,7 @@ interface TVQuoteSession {
 interface TVClient {
   Session: { Quote: new () => TVQuoteSession }
   end: () => void
-  on?: (event: string, cb: (...args: any[]) => void) => void
+  on?: (event: string, cb: (...args: unknown[]) => void) => void
 }
 
 interface TVModule {
@@ -58,10 +70,11 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     if (this.mod) return
     try {
       // dynamic import so absence of optional dep doesn't crash main
-      const imported: any = await import('@mathieuc/tradingview')
+      const imported = (await import('@mathieuc/tradingview')) as { default?: TVModule } & TVModule
       this.mod = imported.default ?? imported
-    } catch (err: any) {
-      this.setStatus('closed', t.adapter.tradingviewLoadFailed(err?.message ?? String(err)))
+    } catch (err: unknown) {
+      const msg = (err as { message?: string } | null)?.message ?? String(err)
+      this.setStatus('closed', t.adapter.tradingviewLoadFailed(msg))
       throw err
     }
   }
@@ -103,15 +116,16 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       client.on?.('disconnected', () => this.setStatus('reconnecting'))
       client.on?.('connected', () => this.setStatus('open'))
       session = new client.Session.Quote()
-    } catch (err: any) {
-      this.emit('itemError', itemId, t.adapter.tradingviewSessionFailed(err?.message ?? String(err)))
+    } catch (err: unknown) {
+      const msg = (err as { message?: string } | null)?.message ?? String(err)
+      this.emit('itemError', itemId, t.adapter.tradingviewSessionFailed(msg))
       return null
     }
 
     let market: TVMarketHandle
     try {
       market = new session.Market(tvSymbol)
-    } catch (err: any) {
+    } catch (err: unknown) {
       try {
         session.delete?.()
       } catch {
@@ -122,7 +136,8 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       } catch {
         // ignore
       }
-      this.emit('itemError', itemId, t.adapter.tradingviewSymbolFailed(err?.message ?? String(err)))
+      const msg = (err as { message?: string } | null)?.message ?? String(err)
+      this.emit('itemError', itemId, t.adapter.tradingviewSymbolFailed(msg))
       return null
     }
 
@@ -140,7 +155,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
         this.lastTickTs.set(itemId, Date.now())
       }
     })
-    market.onData((data: any) => {
+    market.onData((data) => {
       // TV pushes partial updates: e.g., volume-only or chp-only frames
       // without `lp`. Merge with cached values so we still emit a sensible
       // tick instead of dropping the update.
@@ -161,7 +176,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
         ts: Date.now(),
       })
     })
-    market.onError?.((err: any) => {
+    market.onError?.((err) => {
       this.emit('itemError', itemId, t.adapter.tradingviewError(err?.message ?? String(err)))
     })
   }

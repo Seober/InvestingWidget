@@ -65,8 +65,8 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
   const isCrypto = assetType === 'crypto-spot' || assetType === 'crypto-perp'
   const previewUrl = clickThroughUrl.trim() || templates[assetType] || ''
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // form submit 핵심 로직 — event 인자 안 받아 Enter 키 핸들러도 직접 호출 가능.
+  const submitForm = async (): Promise<void> => {
     const rawInput = symbol.trim()
     if (!rawInput) {
       setError('심볼을 입력하세요.')
@@ -155,10 +155,15 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    void submitForm()
+  }
+
   const handleFormKeyDown = (e: ReactKeyboardEvent<HTMLFormElement>) => {
     if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
       e.preventDefault()
-      void handleSubmit(e as unknown as React.FormEvent)
+      void submitForm()
     }
     if (e.key === 'Escape') {
       if (submitting) handleCancel()

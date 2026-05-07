@@ -18,7 +18,7 @@ test(
     }
     const tick = await new Promise<{ price: number; changePct: number }>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('timeout')), 10_000)
-      adapter.on('tick', (id: string, t: any) => {
+      adapter.on('tick', (id: string, t: { price: number; changePct: number }) => {
         if (id !== item.id) return
         clearTimeout(timer)
         resolve(t)

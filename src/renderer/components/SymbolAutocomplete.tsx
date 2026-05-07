@@ -164,7 +164,7 @@ export function SymbolAutocomplete({
           {!loading &&
             suggestions.map((s, i) => (
               <li
-                key={`${s.symbol}-${i}`}
+                key={`${s.symbol}-${s.source ?? 'no-source'}`}
                 role="option"
                 aria-selected={i === highlight}
                 className={i === highlight ? 'highlighted' : ''}

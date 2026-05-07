@@ -40,16 +40,8 @@ export function SettingsModal({ config, onClose, onSave }: Props) {
 
   const updateTemplate = (k: AssetType, v: string) => setTemplates((t) => ({ ...t, [k]: v }))
 
-  const handleFormKeyDown = (e: ReactKeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
-      e.preventDefault()
-      void handleSave(e as unknown as React.FormEvent)
-    }
-    if (e.key === 'Escape') onClose()
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Enter 시 form submit 발화 — onSubmit 흐름과 동일한 save 경로 통합. event 캐스트 회피.
+  const submitForm = async (): Promise<void> => {
     setSaving(true)
     try {
       await onSave({
@@ -68,6 +60,19 @@ export function SettingsModal({ config, onClose, onSave }: Props) {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleFormKeyDown = (e: ReactKeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+      e.preventDefault()
+      void submitForm()
+    }
+    if (e.key === 'Escape') onClose()
+  }
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    void submitForm()
   }
 
   return (

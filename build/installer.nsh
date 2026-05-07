@@ -11,9 +11,12 @@
 
 ; -- electron-builder 의 default install Section ("install" INSTALL_SECTION_ID, installer.nsi:87) 을
 ;    Components 페이지에서 hide. 빈 이름 SectionSetText 로 표시 제거 — NSIS 표준 동작.
-;    customInit 은 installer.nsi 의 .onInit 안 (Section 정의 후) 에서 호출되므로 ID 사용 가능.
+;    INSTALL_SECTION_ID 는 installer.nsi:87 의 Section 명령에서 자동 정의되지만,
+;    customInit 매크로 expand 시점 (installer.nsi:73) 이 그보다 *먼저* 라 ${INSTALL_SECTION_ID}
+;    직접 참조 시 NSIS warning 6000 (unknown variable/constant). 첫 Section 이 "install" 이라
+;    hardcoded index 0 사용 — runtime SectionSetText 명령에 literal 전달.
 !macro customInit
-  SectionSetText ${INSTALL_SECTION_ID} ""
+  SectionSetText 0 ""
 !macroend
 
 ; -- 페이지 추가 hook (electron-builder 의 assistedInstaller.nsh:42 에서 호출, INSTDIR sanitize 후)

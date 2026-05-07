@@ -6,6 +6,7 @@ import { registerIpc } from './ipcRouter'
 import { setAutoStart } from './autostart'
 import { TrayManager } from './tray'
 import { AppLifecycle } from './appLifecycle'
+import { UpdaterManager } from './autoUpdater'
 import { IPC } from '@shared/ipcChannels'
 
 if (!app.requestSingleInstanceLock()) {
@@ -36,6 +37,8 @@ async function main() {
   const tray = new TrayManager(wm, config, broadcastConfig)
   tray.create()
 
-  const lifecycle = new AppLifecycle(wm, config, prices, tray)
+  const updater = new UpdaterManager(() => wm.window)
+
+  const lifecycle = new AppLifecycle(wm, config, prices, tray, updater)
   lifecycle.register()
 }

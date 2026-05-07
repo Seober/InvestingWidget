@@ -1,12 +1,7 @@
-interface ProgressInfo {
-  percent: number
-  transferred: number
-  total: number
-  bytesPerSecond: number
-}
+import type { UpdateProgressInfo } from '@shared/schema'
 
 interface Props {
-  progress: ProgressInfo | null
+  progress: UpdateProgressInfo | null
   downloadedVersion: string | null
   onAccept: () => void
   onDismiss: () => void

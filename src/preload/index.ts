@@ -8,6 +8,8 @@ import type {
   StatusEvent,
   SymbolSuggestion,
   Tick,
+  UpdateDownloadedInfo,
+  UpdateProgressInfo,
   ValidateResult,
 } from '@shared/schema'
 
@@ -91,30 +93,15 @@ const api = {
     },
   },
   updater: {
-    onProgress: (
-      cb: (info: {
-        percent: number
-        transferred: number
-        total: number
-        bytesPerSecond: number
-      }) => void
-    ): (() => void) => {
-      const h = (
-        _e: Electron.IpcRendererEvent,
-        info: {
-          percent: number
-          transferred: number
-          total: number
-          bytesPerSecond: number
-        }
-      ) => cb(info)
+    onProgress: (cb: (info: UpdateProgressInfo) => void): (() => void) => {
+      const h = (_e: Electron.IpcRendererEvent, info: UpdateProgressInfo) => cb(info)
       ipcRenderer.on(IPC.UPDATE_PROGRESS, h)
       return () => {
         ipcRenderer.removeListener(IPC.UPDATE_PROGRESS, h)
       }
     },
-    onDownloaded: (cb: (info: { version: string }) => void): (() => void) => {
-      const h = (_e: Electron.IpcRendererEvent, info: { version: string }) => cb(info)
+    onDownloaded: (cb: (info: UpdateDownloadedInfo) => void): (() => void) => {
+      const h = (_e: Electron.IpcRendererEvent, info: UpdateDownloadedInfo) => cb(info)
       ipcRenderer.on(IPC.UPDATE_DOWNLOADED, h)
       return () => {
         ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, h)

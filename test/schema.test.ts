@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DEFAULT_CONFIG } from '../src/shared/schema'
+import type { StatusEvent } from '../src/shared/schema'
 import { adapterFor } from '../src/shared/adapterMap'
 
 test('default config has 0.5s refresh interval', () => {
@@ -36,4 +37,25 @@ test('default initial window opacity sits inside bounds', () => {
   const { opacity } = DEFAULT_CONFIG.window
   const { min, max } = DEFAULT_CONFIG.defaults.opacityBounds
   assert.ok(opacity >= min && opacity <= max, `opacity ${opacity} outside [${min}, ${max}]`)
+})
+
+test('StatusEvent discriminator kind narrows to ItemStatusEvent', () => {
+  const evt: StatusEvent = { kind: 'item', itemId: 'abc', status: 'closed' }
+  if (evt.kind === 'item') {
+    // 컴파일 타임 narrow — itemId 접근 가능, adapterId 접근 불가
+    assert.equal(evt.itemId, 'abc')
+    assert.equal(evt.status, 'closed')
+  } else {
+    assert.fail('kind item 인데 narrow 실패')
+  }
+})
+
+test('StatusEvent discriminator kind narrows to AdapterStatusEvent', () => {
+  const evt: StatusEvent = { kind: 'adapter', adapterId: 'binance-spot', status: 'open' }
+  if (evt.kind === 'adapter') {
+    assert.equal(evt.adapterId, 'binance-spot')
+    assert.equal(evt.status, 'open')
+  } else {
+    assert.fail('kind adapter 인데 narrow 실패')
+  }
 })

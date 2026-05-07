@@ -22,7 +22,7 @@ export function usePriceStream(handlers: Handlers): void {
 
   useEffect(() => {
     return window.api.prices.onStatus((evt) => {
-      if ('itemId' in evt) {
+      if (evt.kind === 'item') {
         handlersRef.current.onItemError(evt.itemId, evt.message ?? '')
       } else {
         handlersRef.current.onAdapterStatus(evt.adapterId, evt.status, evt.message)

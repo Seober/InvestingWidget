@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
+import type { UpdateProgressInfo } from '@shared/schema'
 import { UpdaterProgressModal } from '../components/UpdaterProgressModal'
 
-interface ProgressInfo {
-  percent: number
-  transferred: number
-  total: number
-  bytesPerSecond: number
-}
-
 export function UpdaterProgressModalRoute() {
-  const [progress, setProgress] = useState<ProgressInfo | null>(null)
+  const [progress, setProgress] = useState<UpdateProgressInfo | null>(null)
   const [downloadedVersion, setDownloadedVersion] = useState<string | null>(null)
 
   useEffect(() => {

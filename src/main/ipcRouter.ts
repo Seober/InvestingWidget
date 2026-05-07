@@ -160,10 +160,10 @@ export function registerIpc(opts: {
   })
 
   prices.on('itemError', (itemId, message) => {
-    wm.sendToRenderer(IPC.PRICE_STATUS, { itemId, status: 'closed', message })
+    wm.sendToRenderer(IPC.PRICE_STATUS, { kind: 'item', itemId, status: 'closed', message })
   })
 
   prices.on('adapterStatus', (adapterId, status, message) => {
-    wm.sendToRenderer(IPC.PRICE_STATUS, { adapterId, status, message })
+    wm.sendToRenderer(IPC.PRICE_STATUS, { kind: 'adapter', adapterId, status, message })
   })
 }

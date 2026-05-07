@@ -24,6 +24,11 @@ win:
     - target: nsis
       arch:
         - x64
+# artifactName — 빈 칸 없는 파일명으로 통일. electron-updater 의 latest.yml 이
+# url 필드에 이 이름 그대로 사용 → 자동 업데이트 다운로드 URL 안정성.
+artifactName: ${productName}-Setup-${version}.${ext}
+# 빌드 산출물 압축 — installer 크기·delta update 효율 ↑.
+compression: maximum
 # NSIS 인스톨러 옵션 — 마법사형 + per-user (관리자 권한 불필요).
 # 설치 경로: %LOCALAPPDATA%\Programs\InvestingWidget. 사용자가 마법사에서 변경 가능.
 # allowElevation:false — admin/user 선택 페이지 제거 (per-user 만)

@@ -4,17 +4,18 @@ import type { ResizeEdge } from '@shared/schema'
 interface HandleSpec {
   edge: ResizeEdge
   cls: string
+  ariaLabel: string
 }
 
 const HANDLES: HandleSpec[] = [
-  { edge: 'top', cls: 'resize-top' },
-  { edge: 'bottom', cls: 'resize-bottom' },
-  { edge: 'left', cls: 'resize-left' },
-  { edge: 'right', cls: 'resize-right' },
-  { edge: 'tl', cls: 'resize-tl' },
-  { edge: 'tr', cls: 'resize-tr' },
-  { edge: 'bl', cls: 'resize-bl' },
-  { edge: 'br', cls: 'resize-br' }
+  { edge: 'top', cls: 'resize-top', ariaLabel: 'Resize top edge' },
+  { edge: 'bottom', cls: 'resize-bottom', ariaLabel: 'Resize bottom edge' },
+  { edge: 'left', cls: 'resize-left', ariaLabel: 'Resize left edge' },
+  { edge: 'right', cls: 'resize-right', ariaLabel: 'Resize right edge' },
+  { edge: 'tl', cls: 'resize-tl', ariaLabel: 'Resize top-left corner' },
+  { edge: 'tr', cls: 'resize-tr', ariaLabel: 'Resize top-right corner' },
+  { edge: 'bl', cls: 'resize-bl', ariaLabel: 'Resize bottom-left corner' },
+  { edge: 'br', cls: 'resize-br', ariaLabel: 'Resize bottom-right corner' }
 ]
 
 const DRAG_THRESHOLD_PX = 5
@@ -77,11 +78,13 @@ export function ResizeHandles() {
 
   return (
     <>
-      {HANDLES.map(({ edge, cls }) => (
+      {HANDLES.map(({ edge, cls, ariaLabel }) => (
         <div
           key={edge}
           className={`resize-handle ${cls}`}
           data-resize-edge={edge}
+          role="separator"
+          aria-label={ariaLabel}
           onMouseDown={handleMouseDown(edge)}
         />
       ))}

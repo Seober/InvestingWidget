@@ -151,6 +151,9 @@ export function SymbolAutocomplete({
         autoFocus={autoFocus}
         autoComplete="off"
         spellCheck={false}
+        role="combobox"
+        aria-expanded={showDropdown}
+        aria-autocomplete="list"
       />
       {showDropdown && (
         <ul className="autocomplete-dropdown" role="listbox">

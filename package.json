@@ -7,12 +7,12 @@
   "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "npm run typecheck && electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "tsx --tsconfig tsconfig.test.json --test test/*.test.ts",
-    "package:win": "electron-vite build && electron-builder --win",
-    "package:dir": "electron-vite build && electron-builder --dir"
+    "package:win": "npm run typecheck && electron-vite build && electron-builder --win",
+    "package:dir": "npm run typecheck && electron-vite build && electron-builder --dir"
   },
   "dependencies": {
     "@mathieuc/tradingview": "^3.5.2",

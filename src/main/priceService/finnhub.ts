@@ -1,4 +1,5 @@
 import { ItemConfig } from '@shared/schema'
+import { t } from '@shared/i18n/messages'
 import { BaseWsAdapter } from './baseWsAdapter'
 
 const WS_URL = 'wss://ws.finnhub.io'
@@ -63,7 +64,7 @@ export class FinnhubAdapter extends BaseWsAdapter {
     set.add(item.id)
 
     if (!this.apiKey) {
-      this.emit('itemError', item.id, 'Finnhub API 키가 필요합니다 (설정에서 입력)')
+      this.emit('itemError', item.id, t.adapter.finnhubKeyMissing)
       return
     }
 

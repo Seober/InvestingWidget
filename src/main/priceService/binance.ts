@@ -1,4 +1,5 @@
 import { ItemConfig } from '@shared/schema'
+import { t } from '@shared/i18n/messages'
 import { BaseWsAdapter } from './baseWsAdapter'
 
 interface BinanceConfig {
@@ -121,7 +122,7 @@ export class BinanceAdapter extends BaseWsAdapter {
           const items = this.streamToItems.get(stream)
           if (items) {
             for (const itemId of items) {
-              this.emit('itemError', itemId, `${this.id}에 없는 심볼입니다`)
+              this.emit('itemError', itemId, t.adapter.invalidSymbol(this.id))
             }
           }
         }

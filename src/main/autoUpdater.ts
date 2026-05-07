@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import type { ProgressInfo } from 'electron-updater'
 import { IPC } from '@shared/ipcChannels'
+import { t } from '@shared/i18n/messages'
 import { openModal } from './modalWindow'
 
 // 자동 업데이트 매니저 — electron-updater 의 GitHub Releases 기반 자동 업데이트.
@@ -47,19 +48,19 @@ export class UpdaterManager {
   // 수동 trigger (우클릭 메뉴) — 결과 없으면 "최신 버전입니다" dialog 추가. 새 버전이면 자동 흐름.
   async manualCheck(): Promise<void> {
     if (!app.isPackaged) {
-      this.showInfo('정보', '개발 모드에서는 업데이트 확인이 동작하지 않습니다.')
+      this.showInfo(t.updater.info, t.updater.devModeBlocked)
       return
     }
     try {
       const result = await autoUpdater.checkForUpdates()
       const latest = result?.updateInfo?.version
       if (!result || !latest || latest === app.getVersion()) {
-        this.showInfo('정보', `현재 최신 버전을 사용 중입니다 (v${app.getVersion()}).`)
+        this.showInfo(t.updater.info, t.updater.upToDate(app.getVersion()))
       }
       // 새 버전 — update-available 이벤트가 자동 발화해 onUpdateAvailable 처리
     } catch (err: unknown) {
       const msg = (err as { message?: string } | null)?.message ?? String(err)
-      this.showInfo('오류', `업데이트 확인 실패: ${msg}`)
+      this.showInfo(t.updater.error, t.updater.checkFailed(msg))
     }
   }
 
@@ -70,10 +71,10 @@ export class UpdaterManager {
 
   private async onUpdateAvailable(version: string): Promise<void> {
     const choice = await this.showChoice({
-      title: '업데이트 발견',
-      message: `새 버전 v${version} 이 있습니다.`,
-      detail: '지금 다운로드할까요? (다운로드 중에도 위젯 사용 가능)',
-      buttons: ['다운로드', '나중에'],
+      title: t.updater.foundTitle,
+      message: t.updater.foundMessage(version),
+      detail: t.updater.downloadPrompt,
+      buttons: [t.updater.downloadButton, t.updater.laterButton],
     })
     if (choice !== 0) return
     try {
@@ -81,7 +82,7 @@ export class UpdaterManager {
       await autoUpdater.downloadUpdate()
     } catch (err: unknown) {
       const msg = (err as { message?: string } | null)?.message ?? String(err)
-      this.showInfo('오류', `다운로드 실패: ${msg}`)
+      this.showInfo(t.updater.error, t.updater.downloadFailed(msg))
     }
   }
 
@@ -93,10 +94,10 @@ export class UpdaterManager {
     }
     // modal 이 close 됐을 경우 안전망 — native dialog
     const choice = await this.showChoice({
-      title: '업데이트 다운로드 완료',
-      message: `v${version} 다운로드가 완료되었습니다.`,
-      detail: '지금 재시작하고 적용하시겠습니까?',
-      buttons: ['재시작·적용', '나중에'],
+      title: t.updater.downloadedTitle,
+      message: t.updater.downloadedMessage(version),
+      detail: t.updater.restartPrompt,
+      buttons: [t.updater.restartButton, t.updater.laterButton],
     })
     if (choice === 0) {
       this.acceptInstall()

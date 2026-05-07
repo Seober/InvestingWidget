@@ -8,6 +8,7 @@ import {
   SourceId,
   ValidateResult,
 } from '@shared/schema'
+import { t } from '@shared/i18n/messages'
 import { PriceAdapter, RawTick } from './types'
 import { BinanceAdapter, createBinancePerp, createBinanceSpot } from './binance'
 import { FinnhubAdapter } from './finnhub'
@@ -110,9 +111,7 @@ export class PriceService extends EventEmitter {
       const isKr = itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr'
       return {
         ok: false,
-        error: isKr
-          ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
-          : '지원하지 않는 자산 유형입니다.',
+        error: isKr ? t.adapter.tradingviewDisabled : t.adapter.unsupportedAssetType,
       }
     }
     // @mathieuc/tradingview 라이브러리에 알려진 버그: validate 단계에서 임시 Market을
@@ -147,7 +146,7 @@ export class PriceService extends EventEmitter {
       ok: false,
       error: errors.length
         ? `시도한 거래소(${chain.map((a) => a.id).join(', ')})에서 모두 시세를 받지 못했습니다.`
-        : '시세 수신 실패',
+        : t.adapter.receiveFailed,
     }
   }
 
@@ -210,9 +209,7 @@ export class PriceService extends EventEmitter {
       this.emit(
         'itemError',
         item.id,
-        isKr
-          ? 'TradingView 어댑터가 비활성화되어 있습니다 (설정에서 활성화)'
-          : '지원하지 않는 자산 유형입니다.'
+        isKr ? t.adapter.tradingviewDisabled : t.adapter.unsupportedAssetType
       )
       return
     }

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events'
 import { AdapterStatus, ItemConfig } from '@shared/schema'
+import { t } from '@shared/i18n/messages'
 import { PriceAdapter } from './types'
 
 interface TVMarketHandle {
@@ -60,7 +61,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       const imported: any = await import('@mathieuc/tradingview')
       this.mod = imported.default ?? imported
     } catch (err: any) {
-      this.setStatus('closed', `@mathieuc/tradingview 로드 실패: ${err?.message ?? err}`)
+      this.setStatus('closed', t.adapter.tradingviewLoadFailed(err?.message ?? String(err)))
       throw err
     }
   }
@@ -72,7 +73,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     try {
       await this.initIfNeeded()
     } catch {
-      this.emit('itemError', item.id, 'TradingView 어댑터 초기화 실패')
+      this.emit('itemError', item.id, t.adapter.tradingviewInitFailed)
       return
     }
 
@@ -89,7 +90,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   // subscribe / recreateMarket 양쪽에서 동일 패턴 사용.
   private createItemEntry(itemId: string, tvSymbol: string): ItemEntry | null {
     if (!this.mod) {
-      this.emit('itemError', itemId, 'TradingView 모듈 없음')
+      this.emit('itemError', itemId, t.adapter.tradingviewModuleMissing)
       return null
     }
     let client: TVClient
@@ -103,7 +104,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       client.on?.('connected', () => this.setStatus('open'))
       session = new client.Session.Quote()
     } catch (err: any) {
-      this.emit('itemError', itemId, `TradingView 세션 생성 실패: ${err?.message ?? err}`)
+      this.emit('itemError', itemId, t.adapter.tradingviewSessionFailed(err?.message ?? String(err)))
       return null
     }
 
@@ -121,7 +122,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       } catch {
         // ignore
       }
-      this.emit('itemError', itemId, `TradingView 심볼 생성 실패: ${err?.message ?? err}`)
+      this.emit('itemError', itemId, t.adapter.tradingviewSymbolFailed(err?.message ?? String(err)))
       return null
     }
 
@@ -161,7 +162,7 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       })
     })
     market.onError?.((err: any) => {
-      this.emit('itemError', itemId, `TradingView 오류: ${err?.message ?? String(err)}`)
+      this.emit('itemError', itemId, t.adapter.tradingviewError(err?.message ?? String(err)))
     })
   }
 

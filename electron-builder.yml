@@ -26,13 +26,17 @@ win:
         - x64
 # NSIS 인스톨러 옵션 — 마법사형 + per-user (관리자 권한 불필요).
 # 설치 경로: %LOCALAPPDATA%\Programs\InvestingWidget. 사용자가 마법사에서 변경 가능.
+# allowElevation:false — admin/user 선택 페이지 제거 (per-user 만)
+# createDesktopShortcut/createStartMenuShortcut:false + custom installer.nsh 의 Components 페이지로 사용자 직접 선택
 nsis:
   oneClick: false
   perMachine: false
+  allowElevation: false
   allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
+  createDesktopShortcut: false
+  createStartMenuShortcut: false
   shortcutName: InvestingWidget
+  include: build/installer.nsh
 # electron-updater 가 GitHub Releases 의 latest.yml 로 새 버전 감지.
 # 빌드 시 release/latest.yml 자동 생성, gh release create 시 .exe 와 함께 첨부 필요.
 publish:

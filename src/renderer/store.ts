@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { AppConfig, ItemConfig, Tick } from '@shared/schema'
-import { adapterFor, type AdapterId } from '@shared/adapterMap'
+import type { AppConfig, ItemConfig, SourceId, Tick } from '@shared/schema'
+import { adapterFor } from '@shared/adapterMap'
 
 interface ItemRuntimeState {
   price?: number
@@ -54,7 +54,7 @@ export const useStore = create<AppState>((set) => ({
     set((s) => {
       const next = { ...s.ticks }
       for (const item of s.items) {
-        if (adapterFor(item.assetType) !== (adapterId as AdapterId)) continue
+        if (adapterFor(item.assetType) !== (adapterId as SourceId)) continue
         if (next[item.id]?.errorMessage) continue
         next[item.id] = { ...next[item.id], status, errorMessage: message }
       }

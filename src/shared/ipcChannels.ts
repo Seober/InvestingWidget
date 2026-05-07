@@ -23,16 +23,12 @@ export const IPC = {
   OPACITY_SET: 'opacity:set',
   ALWAYS_ON_TOP_SET: 'alwaysOnTop:set',
   AUTOSTART_SET: 'autostart:set',
-  WINDOW_RESIZE_SAVE: 'window:resizeSave',
   WINDOW_SET_CONTENT_SIZE: 'window:setContentSize',
   MODAL_OPEN: 'modal:open',
 
   LINK_OPEN: 'link:open',
 
   MENU_SHOW: 'menu:show',
-  MENU_OPEN_ADD_ITEM: 'menu:openAddItem',
-  MENU_OPEN_SETTINGS: 'menu:openSettings',
-  MENU_EDIT_ITEM: 'menu:editItem',
 
   PRICE_TICK: 'price:tick',
   PRICE_STATUS: 'price:status',

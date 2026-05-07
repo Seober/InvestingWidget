@@ -117,7 +117,7 @@ export function registerIpc(opts: {
 
   ipcMain.handle(IPC.AUTOSTART_SET, (_e, enabled: boolean) => {
     setAutoStart(enabled)
-    config.set({ window: { ...config.get().window, autoStart: enabled } })
+    config.updateWindow({ autoStart: enabled })
     broadcastConfig()
     return enabled
   })
@@ -149,21 +149,15 @@ export function registerIpc(opts: {
   })
 
   prices.on('tick', (itemId, raw) => {
-    const win = wm.window
-    if (!win) return
     const tick: Tick = { itemId, price: raw.price, changePct: raw.changePct, ts: raw.ts }
-    win.webContents.send(IPC.PRICE_TICK, tick)
+    wm.sendToRenderer(IPC.PRICE_TICK, tick)
   })
 
   prices.on('itemError', (itemId, message) => {
-    const win = wm.window
-    if (!win) return
-    win.webContents.send(IPC.PRICE_STATUS, { itemId, status: 'closed', message })
+    wm.sendToRenderer(IPC.PRICE_STATUS, { itemId, status: 'closed', message })
   })
 
   prices.on('adapterStatus', (adapterId, status, message) => {
-    const win = wm.window
-    if (!win) return
-    win.webContents.send(IPC.PRICE_STATUS, { adapterId, status, message })
+    wm.sendToRenderer(IPC.PRICE_STATUS, { adapterId, status, message })
   })
 }

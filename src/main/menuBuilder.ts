@@ -66,7 +66,7 @@ export function buildContextMenuTemplate(
       checked: cfg.window.autoStart,
       click: (mi) => {
         setAutoStart(mi.checked)
-        config.set({ window: { ...config.get().window, autoStart: mi.checked } })
+        config.updateWindow({ autoStart: mi.checked })
         onChange()
       }
     },

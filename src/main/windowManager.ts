@@ -70,22 +70,24 @@ export class WindowManager {
     return this.win
   }
 
+  // 윈도우 부재 시 무음 무시 — 렌더러 전송 시 매번 null 체크 반복하지 않게.
+  sendToRenderer<T = unknown>(channel: string, payload: T): void {
+    if (!this.win) return
+    this.win.webContents.send(channel, payload)
+  }
+
   setOpacity(value: number) {
     if (!this.win) return
     const { min, max } = this.config.get().defaults.opacityBounds
     const clamped = Math.max(min, Math.min(max, value))
     this.win.setOpacity(clamped)
-    this.config.set({
-      window: { ...this.config.get().window, opacity: clamped }
-    })
+    this.config.updateWindow({ opacity: clamped })
   }
 
   setAlwaysOnTop(enabled: boolean) {
     if (!this.win) return
     this.win.setAlwaysOnTop(enabled, 'screen-saver')
-    this.config.set({
-      window: { ...this.config.get().window, alwaysOnTop: enabled }
-    })
+    this.config.updateWindow({ alwaysOnTop: enabled })
   }
 
   show() {
@@ -196,9 +198,7 @@ export class WindowManager {
       if (!this.win) return
       const [x, y] = this.win.getPosition()
       const [width, height] = this.win.getSize()
-      this.config.set({
-        window: { ...this.config.get().window, x, y, width, height }
-      })
+      this.config.updateWindow({ x, y, width, height })
     }, 300)
   }
 

@@ -24,9 +24,7 @@ async function main() {
   const prices = new PriceService(cfg)
 
   const broadcastConfig = () => {
-    const w = wm.window
-    if (!w) return
-    w.webContents.send(IPC.CONFIG_CHANGED, config.get())
+    wm.sendToRenderer(IPC.CONFIG_CHANGED, config.get())
   }
 
   registerIpc({ config, wm, prices, broadcastConfig })

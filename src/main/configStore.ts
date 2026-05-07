@@ -1,5 +1,5 @@
 import Store from 'electron-store'
-import { AppConfig, DEFAULT_CONFIG } from '@shared/schema'
+import { AppConfig, DefaultsConfig, DEFAULT_CONFIG, WindowConfig } from '@shared/schema'
 
 const CURRENT_SCHEMA_VERSION = 1
 
@@ -49,6 +49,15 @@ export class ConfigStore {
     this.memCache = migrate({ ...this.memCache, ...patch })
     this.scheduleSave()
     return this.memCache
+  }
+
+  // 중첩 필드 부분 업데이트 헬퍼 — `{ window: { ...get().window, ... } }` 스프레드 반복 정리.
+  updateWindow(patch: Partial<WindowConfig>): AppConfig {
+    return this.set({ window: { ...this.memCache.window, ...patch } })
+  }
+
+  updateDefaults(patch: Partial<DefaultsConfig>): AppConfig {
+    return this.set({ defaults: { ...this.memCache.defaults, ...patch } })
   }
 
   setNow(patch: Partial<AppConfig>): AppConfig {

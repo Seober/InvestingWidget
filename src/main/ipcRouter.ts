@@ -1,169 +1,31 @@
-import { BrowserWindow, ipcMain, shell } from 'electron'
-import { randomUUID } from 'node:crypto'
-import { AppConfig, AssetType, ItemConfig, ResizeEdge, Tick } from '@shared/schema'
-import { IPC } from '@shared/ipcChannels'
-import { ConfigStore } from './configStore'
-import { WindowManager } from './windowManager'
-import { PriceService } from './priceService'
-import { UpdaterManager } from './autoUpdater'
-import { showContextMenu } from './menuBuilder'
-import { resolveClickThroughUrl } from './clickThroughResolver'
-import { setAutoStart } from './autostart'
-import { openModal } from './modalWindow'
-import { resolveKrStock } from './krStockResolver'
-import { searchSymbols } from './symbolSearch'
+import type { ConfigStore } from './configStore'
+import type { WindowManager } from './windowManager'
+import type { PriceService } from './priceService'
+import type { UpdaterManager } from './autoUpdater'
+import * as configIpc from './ipc/configIpc'
+import * as itemIpc from './ipc/itemIpc'
+import * as priceIpc from './ipc/priceIpc'
+import * as windowIpc from './ipc/windowIpc'
+import * as modalIpc from './ipc/modalIpc'
+import * as updaterIpc from './ipc/updaterIpc'
+import * as appIpc from './ipc/appIpc'
 
+// IPC handler thin orchestrator — 도메인별 ipc/* 모듈에 위임.
+// 각 모듈은 자기 의존성만 받아 register(deps) — 의존 최소화·테스트 격리 용이.
 export function registerIpc(opts: {
   config: ConfigStore
   wm: WindowManager
   prices: PriceService
   updater: UpdaterManager
   broadcastConfig: () => void
-}) {
+}): void {
   const { config, wm, prices, updater, broadcastConfig } = opts
 
-  ipcMain.handle(IPC.CONFIG_GET, () => config.get())
-
-  ipcMain.handle(IPC.CONFIG_SET, (_e, patch: Partial<AppConfig>) => {
-    const before = config.get()
-    const next = config.set(patch)
-    if (patch.finnhubApiKey !== undefined && patch.finnhubApiKey !== before.finnhubApiKey) {
-      prices.setFinnhubApiKey(patch.finnhubApiKey)
-    }
-    if (
-      patch.tradingViewEnabled !== undefined &&
-      patch.tradingViewEnabled !== before.tradingViewEnabled
-    ) {
-      prices.setTradingViewEnabled(patch.tradingViewEnabled)
-      prices.setItems(next.items)
-    } else if (patch.items !== undefined) {
-      prices.setItems(next.items)
-    }
-    broadcastConfig()
-    return next
-  })
-
-  ipcMain.handle(IPC.ITEM_ADD, (_e, draft: Omit<ItemConfig, 'id'>) => {
-    const item: ItemConfig = { ...draft, id: randomUUID() }
-    const next = [...config.get().items, item]
-    config.set({ items: next })
-    prices.setItems(next)
-    broadcastConfig()
-    return item
-  })
-
-  ipcMain.handle(IPC.ITEM_EDIT, (_e, item: ItemConfig) => {
-    const next = config.get().items.map((i) => (i.id === item.id ? item : i))
-    config.set({ items: next })
-    prices.refreshItem(item)
-    broadcastConfig()
-    return item
-  })
-
-  ipcMain.handle(IPC.ITEM_REMOVE, (_e, itemId: string) => {
-    const next = config.get().items.filter((i) => i.id !== itemId)
-    config.set({ items: next })
-    prices.setItems(next)
-    broadcastConfig()
-  })
-
-  let activeValidate: AbortController | null = null
-  ipcMain.handle(IPC.ITEM_VALIDATE, async (_e, draft: Omit<ItemConfig, 'id'>) => {
-    activeValidate?.abort()
-    const controller = new AbortController()
-    activeValidate = controller
-    try {
-      return await prices.validate(draft, controller.signal)
-    } finally {
-      if (activeValidate === controller) activeValidate = null
-    }
-  })
-  ipcMain.on(IPC.ITEM_CANCEL_VALIDATE, () => {
-    activeValidate?.abort()
-  })
-
-  ipcMain.handle(IPC.KR_STOCK_RESOLVE, async (_e, query: string) => {
-    return resolveKrStock(query)
-  })
-
-  ipcMain.handle(
-    IPC.SYMBOL_SEARCH,
-    async (_e, params: { assetType: AssetType; query: string; quoteCurrency?: string }) => {
-      return searchSymbols(params.assetType, params.query, params.quoteCurrency)
-    }
-  )
-
-  ipcMain.on(IPC.DRAG_START, () => wm.beginDrag())
-  ipcMain.on(IPC.DRAG_MOVE, () => wm.drag())
-  ipcMain.on(IPC.DRAG_END, () => wm.endDrag())
-
-  ipcMain.on(IPC.RESIZE_HANDLE_START, (_e, edge: ResizeEdge) => wm.beginEdgeResize(edge))
-  ipcMain.on(IPC.RESIZE_HANDLE_MOVE, () => wm.dragEdgeResize())
-  ipcMain.on(IPC.RESIZE_HANDLE_END, () => wm.endEdgeResize())
-
-  ipcMain.on(
-    IPC.MODAL_OPEN,
-    (_e, payload: { kind: 'add-item' | 'edit-item' | 'settings'; itemId?: string }) => {
-      const win = wm.window
-      if (!win) return
-      openModal({ parent: win, kind: payload.kind, itemId: payload.itemId })
-    }
-  )
-
-  ipcMain.handle(IPC.OPACITY_SET, (_e, value: number) => {
-    wm.setOpacity(value)
-    return config.get().window.opacity
-  })
-
-  ipcMain.handle(IPC.ALWAYS_ON_TOP_SET, (_e, enabled: boolean) => {
-    wm.setAlwaysOnTop(enabled)
-    return enabled
-  })
-
-  ipcMain.handle(IPC.AUTOSTART_SET, (_e, enabled: boolean) => {
-    setAutoStart(enabled)
-    config.updateWindow({ autoStart: enabled })
-    broadcastConfig()
-    return enabled
-  })
-
-  ipcMain.handle(IPC.WINDOW_SET_CONTENT_SIZE, (_e, size: { width?: number; height?: number }) => {
-    wm.setContentSize(size)
-  })
-
-  ipcMain.on(IPC.LINK_OPEN, (_e, itemId: string) => {
-    const cfg = config.get()
-    const item = cfg.items.find((i) => i.id === itemId)
-    if (!item) return
-    const url = resolveClickThroughUrl(item, cfg)
-    if (url) shell.openExternal(url).catch(() => {})
-  })
-
-  ipcMain.on(IPC.MENU_SHOW, () => {
-    const win = wm.window
-    if (!win) return
-    showContextMenu(win, config, wm, updater, broadcastConfig)
-  })
-
-  ipcMain.on(IPC.UPDATE_ACCEPT_INSTALL, () => {
-    updater.acceptInstall()
-  })
-
-  ipcMain.on(IPC.APP_QUIT, () => {
-    config.flush()
-    BrowserWindow.getAllWindows().forEach((w) => w.close())
-  })
-
-  prices.on('tick', (itemId, raw) => {
-    const tick: Tick = { itemId, price: raw.price, changePct: raw.changePct, ts: raw.ts }
-    wm.sendToRenderer(IPC.PRICE_TICK, tick)
-  })
-
-  prices.on('itemError', (itemId, message) => {
-    wm.sendToRenderer(IPC.PRICE_STATUS, { kind: 'item', itemId, status: 'closed', message })
-  })
-
-  prices.on('adapterStatus', (adapterId, status, message) => {
-    wm.sendToRenderer(IPC.PRICE_STATUS, { kind: 'adapter', adapterId, status, message })
-  })
+  configIpc.register({ config, prices, broadcastConfig })
+  itemIpc.register({ config, prices, broadcastConfig })
+  priceIpc.register({ wm, prices })
+  windowIpc.register({ config, wm, broadcastConfig })
+  modalIpc.register({ wm })
+  updaterIpc.register({ updater })
+  appIpc.register({ config, wm, updater, broadcastConfig })
 }

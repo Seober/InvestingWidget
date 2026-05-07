@@ -1,17 +1,28 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import type { ProgressInfo } from 'electron-updater'
+import { IPC } from '@shared/ipcChannels'
+import { openModal } from './modalWindow'
 
 // 자동 업데이트 매니저 — electron-updater 의 GitHub Releases 기반 자동 업데이트.
 // 사용자 동의 우선 — autoDownload·autoInstallOnAppQuit 모두 false. 다운로드·재시작·적용 모두 사용자 명시 동의.
 //
-// 본 stage(3)에서는 native showMessageBox 두 단계로 구현. progress modal UI 는 Stage 5 에서 추가됨 (다운로드 진행률 시각화).
+// Stage 3: native showMessageBox 두 단계 구현.
+// Stage 5: download progress modal UI 추가 — update-available 동의 시 progress modal 열고
+// download-progress 이벤트를 modal 에 IPC 전달. modal close 시 백그라운드 다운로드 계속,
+// update-downloaded 시 modal 살아있으면 IPC 로 ready 상태 전환·null 이면 native dialog 안전망.
 export class UpdaterManager {
+  private progressModal: BrowserWindow | null = null
+
   constructor(private getMainWindow: () => BrowserWindow | null) {
     autoUpdater.autoDownload = false
     autoUpdater.autoInstallOnAppQuit = false
 
     autoUpdater.on('update-available', (info) => {
       void this.onUpdateAvailable(info?.version ?? '?')
+    })
+    autoUpdater.on('download-progress', (progress: ProgressInfo) => {
+      this.sendProgressToModal(progress)
     })
     autoUpdater.on('update-downloaded', (info) => {
       void this.onUpdateDownloaded(info?.version ?? '?')
@@ -52,6 +63,11 @@ export class UpdaterManager {
     }
   }
 
+  // renderer (progress modal) 에서 IPC.UPDATE_ACCEPT_INSTALL 받았을 때 호출.
+  acceptInstall(): void {
+    autoUpdater.quitAndInstall()
+  }
+
   private async onUpdateAvailable(version: string): Promise<void> {
     const choice = await this.showChoice({
       title: '업데이트 발견',
@@ -59,17 +75,23 @@ export class UpdaterManager {
       detail: '지금 다운로드할까요? (다운로드 중에도 위젯 사용 가능)',
       buttons: ['다운로드', '나중에']
     })
-    if (choice === 0) {
-      try {
-        await autoUpdater.downloadUpdate()
-      } catch (err: unknown) {
-        const msg = (err as { message?: string } | null)?.message ?? String(err)
-        this.showInfo('오류', `다운로드 실패: ${msg}`)
-      }
+    if (choice !== 0) return
+    try {
+      this.openProgressModal()
+      await autoUpdater.downloadUpdate()
+    } catch (err: unknown) {
+      const msg = (err as { message?: string } | null)?.message ?? String(err)
+      this.showInfo('오류', `다운로드 실패: ${msg}`)
     }
   }
 
   private async onUpdateDownloaded(version: string): Promise<void> {
+    if (this.progressModal && !this.progressModal.isDestroyed()) {
+      // modal 살아있음 — IPC 로 ready 상태 전환, 사용자가 modal 의 재시작 버튼으로 결정
+      this.progressModal.webContents.send(IPC.UPDATE_DOWNLOADED, { version })
+      return
+    }
+    // modal 이 close 됐을 경우 안전망 — native dialog
     const choice = await this.showChoice({
       title: '업데이트 다운로드 완료',
       message: `v${version} 다운로드가 완료되었습니다.`,
@@ -77,8 +99,28 @@ export class UpdaterManager {
       buttons: ['재시작·적용', '나중에']
     })
     if (choice === 0) {
-      autoUpdater.quitAndInstall()
+      this.acceptInstall()
     }
+  }
+
+  private openProgressModal(): void {
+    const parent = this.getMainWindow()
+    if (!parent) return
+    const modal = openModal({ parent, kind: 'updater-progress' })
+    this.progressModal = modal
+    modal.on('closed', () => {
+      if (this.progressModal === modal) this.progressModal = null
+    })
+  }
+
+  private sendProgressToModal(progress: ProgressInfo): void {
+    if (!this.progressModal || this.progressModal.isDestroyed()) return
+    this.progressModal.webContents.send(IPC.UPDATE_PROGRESS, {
+      percent: progress.percent,
+      transferred: progress.transferred,
+      total: progress.total,
+      bytesPerSecond: progress.bytesPerSecond
+    })
   }
 
   private async showChoice(opts: {

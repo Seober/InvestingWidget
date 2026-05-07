@@ -145,6 +145,10 @@ export function registerIpc(opts: {
     showContextMenu(win, config, wm, updater, broadcastConfig)
   })
 
+  ipcMain.on(IPC.UPDATE_ACCEPT_INSTALL, () => {
+    updater.acceptInstall()
+  })
+
   ipcMain.on(IPC.APP_QUIT, () => {
     config.flush()
     BrowserWindow.getAllWindows().forEach((w) => w.close())

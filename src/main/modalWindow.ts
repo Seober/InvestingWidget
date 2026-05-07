@@ -2,7 +2,7 @@ import { BrowserWindow, screen } from 'electron'
 import { join } from 'node:path'
 import { iconPath } from './iconPath'
 
-export type ModalKind = 'add-item' | 'edit-item' | 'settings' | 'list-edit'
+export type ModalKind = 'add-item' | 'edit-item' | 'settings' | 'list-edit' | 'updater-progress'
 
 interface ModalDims {
   width: number
@@ -14,7 +14,8 @@ const DIMS: Record<ModalKind, ModalDims> = {
   'add-item': { width: 480, height: 600, title: '항목 추가' },
   'edit-item': { width: 480, height: 600, title: '항목 편집' },
   settings: { width: 540, height: 720, title: '설정' },
-  'list-edit': { width: 540, height: 640, title: '목록 편집' }
+  'list-edit': { width: 540, height: 640, title: '목록 편집' },
+  'updater-progress': { width: 440, height: 240, title: '업데이트 다운로드' }
 }
 
 const openModals = new Map<ModalKind, BrowserWindow>()

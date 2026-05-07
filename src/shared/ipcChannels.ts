@@ -33,6 +33,10 @@ export const IPC = {
   PRICE_TICK: 'price:tick',
   PRICE_STATUS: 'price:status',
 
+  UPDATE_PROGRESS: 'update:progress',
+  UPDATE_DOWNLOADED: 'update:downloaded',
+  UPDATE_ACCEPT_INSTALL: 'update:acceptInstall',
+
   APP_QUIT: 'app:quit'
 } as const
 

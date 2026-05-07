@@ -93,6 +93,38 @@ const api = {
       }
     }
   },
+  updater: {
+    onProgress: (
+      cb: (info: {
+        percent: number
+        transferred: number
+        total: number
+        bytesPerSecond: number
+      }) => void
+    ): (() => void) => {
+      const h = (
+        _e: Electron.IpcRendererEvent,
+        info: {
+          percent: number
+          transferred: number
+          total: number
+          bytesPerSecond: number
+        }
+      ) => cb(info)
+      ipcRenderer.on(IPC.UPDATE_PROGRESS, h)
+      return () => {
+        ipcRenderer.removeListener(IPC.UPDATE_PROGRESS, h)
+      }
+    },
+    onDownloaded: (cb: (info: { version: string }) => void): (() => void) => {
+      const h = (_e: Electron.IpcRendererEvent, info: { version: string }) => cb(info)
+      ipcRenderer.on(IPC.UPDATE_DOWNLOADED, h)
+      return () => {
+        ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, h)
+      }
+    },
+    acceptInstall: () => ipcRenderer.send(IPC.UPDATE_ACCEPT_INSTALL)
+  },
   app: {
     quit: () => ipcRenderer.send(IPC.APP_QUIT)
   }

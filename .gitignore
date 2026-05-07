@@ -6,4 +6,5 @@ dist/
 *.log
 .vscode/
 .idea/
+.claude/
 resources/InvestingWidget.old.png

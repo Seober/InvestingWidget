@@ -1,0 +1,11 @@
+/* 도메인별 분할 스타일 진입점 — main.tsx 가 이 파일만 import.
+   기존 단일 styles.css (~609 라인) 을 영역별로 분리.
+   import 순서: base → 컴포넌트별 (cascade 충돌 없으므로 순서 무관, 가독성 위해 의미 그룹화) → theme-light (마지막에 라이트 변형 적용). */
+@import './base.css';
+@import './app.css';
+@import './row.css';
+@import './resize.css';
+@import './modal.css';
+@import './autocomplete.css';
+@import './list-edit.css';
+@import './theme-light.css';

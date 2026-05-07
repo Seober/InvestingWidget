@@ -1,0 +1,59 @@
+/* 라이트 테마 변형 모음 — .app.theme-light 셀렉터 컨텍스트 14곳 통합.
+   다크 기본값과 분리해서 한 파일에서 라이트 테마 전체 일괄 관리. */
+
+.app.theme-light {
+  background: rgba(252, 252, 252, 0.85);
+  color: #111;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.app.theme-light .header {
+  color: #6b7280;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.app.theme-light .row:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.app.theme-light .modal {
+  background: #fff;
+  color: #111;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.app.theme-light .modal input,
+.app.theme-light .modal select {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.app.theme-light .modal select option {
+  background: #fff;
+  color: #111;
+}
+
+.app.theme-light .autocomplete-dropdown {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+.app.theme-light .autocomplete-dropdown li.highlighted,
+.app.theme-light .autocomplete-dropdown li:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+.app.theme-light .autocomplete-symbol {
+  color: #111;
+}
+.app.theme-light .autocomplete-name {
+  color: #4b5563;
+}
+
+.app.theme-light .list-edit-row {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+.app.theme-light .list-edit-row.list-edit-head {
+  background: rgba(0, 0, 0, 0.05);
+  color: #6b7280;
+}

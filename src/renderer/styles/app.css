@@ -1,0 +1,65 @@
+.app {
+  height: 100%;
+  width: 100%;
+  background: rgba(15, 17, 22, 0.78);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+  overflow: hidden;
+}
+
+/* 가장자리 더블클릭 → 열 자동맞춤 시 한 프레임 동안 max-content 측정용 */
+.app.measuring-width {
+  width: max-content !important;
+  max-width: none !important;
+}
+
+/* 자동맞춤 호출 시 220ms 시각 피드백 — lime inset 테두리 */
+.app.autofitting {
+  box-shadow: 0 0 0 2px #84cc16 inset;
+}
+
+.loading,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #94a3b8;
+  font-size: 0.9em;
+  padding: 12px;
+  text-align: center;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px 6px 8px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.header span:nth-child(2),
+.header span:nth-child(3) {
+  text-align: right;
+}
+
+.header span:nth-child(3) {
+  min-width: 64px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  overflow-y: auto;
+}

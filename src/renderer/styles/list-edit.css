@@ -1,0 +1,132 @@
+/* List edit modal */
+.modal-list-edit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-edit-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.list-edit-row {
+  display: grid;
+  grid-template-columns: 24px 24px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.list-edit-row:last-child {
+  border-bottom: none;
+}
+
+.list-edit-row.list-edit-head {
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.78em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.list-edit-row.is-dragging {
+  opacity: 0.4;
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.list-edit-rows {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 120px;
+}
+
+.list-edit-rows .empty {
+  padding: 24px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.list-edit-handle-cell {
+  cursor: grab;
+  color: #6b7280;
+  text-align: center;
+  user-select: none;
+  font-weight: 700;
+}
+
+.list-edit-row[draggable='true']:active .list-edit-handle-cell {
+  cursor: grabbing;
+}
+
+.list-edit-col-symbol {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.list-edit-col-type {
+  font-size: 0.85em;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.list-edit-edit-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.list-edit-edit-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.list-edit-edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.list-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.list-edit-delete-btn {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.list-edit-delete-btn:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.25);
+}
+
+.list-edit-delete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.list-edit-save-btn {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: white !important;
+}

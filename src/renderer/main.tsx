@@ -4,7 +4,7 @@ import { App } from './App'
 import { AddItemModalRoute } from './routes/AddItemModalRoute'
 import { SettingsModalRoute } from './routes/SettingsModalRoute'
 import { ListEditModalRoute } from './routes/ListEditModalRoute'
-import './styles.css'
+import './styles/index.css'
 
 function parseRoute(): { kind: string; params: URLSearchParams } {
   const raw = window.location.hash.replace(/^#\/?/, '')

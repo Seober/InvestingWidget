@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { useStore } from './store'
 import { ItemRow } from './components/ItemRow'
 import { ResizeHandles } from './components/ResizeHandles'
@@ -11,7 +11,14 @@ import { useAutofit } from './hooks/useAutofit'
 import { useEdgeResizeDblClick } from './hooks/useEdgeResizeDblClick'
 
 export function App() {
-  const { config, items, ticks, setConfig, applyTick, setItemError, setAdapterStatus } = useStore()
+  // zustand selector — 도메인별 분리 구독으로 부분 변경만 트리거. actions 는 stable reference.
+  const config = useStore((s) => s.config)
+  const items = useStore((s) => s.items)
+  const ticks = useStore((s) => s.ticks)
+  const setConfig = useStore((s) => s.setConfig)
+  const applyTick = useStore((s) => s.applyTick)
+  const setItemError = useStore((s) => s.setItemError)
+  const setAdapterStatus = useStore((s) => s.setAdapterStatus)
 
   const appRef = useRef<HTMLDivElement>(null)
   const rowsRef = useRef<HTMLDivElement>(null)
@@ -31,7 +38,7 @@ export function App() {
   const { autofitHeight, autofitWidth } = useAutofit({ appRef, rowsRef, headerRef })
   useEdgeResizeDblClick(autofitHeight, autofitWidth)
 
-  const findItemId = (target: EventTarget | null): string | null => {
+  const findItemId = useCallback((target: EventTarget | null): string | null => {
     let el = target as HTMLElement | null
     while (el) {
       const id = el.getAttribute?.('data-item-id')
@@ -39,16 +46,23 @@ export function App() {
       el = el.parentElement
     }
     return null
-  }
+  }, [])
 
-  useDrag({
-    onClick: (target) => {
+  const handleRowClick = useCallback(
+    (target: EventTarget | null) => {
       const id = findItemId(target)
       if (id) window.api.links.open(id)
     },
-    onContextMenu: () => {
-      window.api.menu.show()
-    }
+    [findItemId]
+  )
+
+  const handleContextMenu = useCallback(() => {
+    window.api.menu.show()
+  }, [])
+
+  useDrag({
+    onClick: handleRowClick,
+    onContextMenu: handleContextMenu
   })
 
   if (!config) return <div className="loading">로딩 중…</div>

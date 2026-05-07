@@ -31,7 +31,7 @@ export function SymbolAutocomplete({
 
   const containerRef = useRef<HTMLDivElement>(null)
   const requestIdRef = useRef(0)
-  const debounceTimerRef = useRef<number | null>(null)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const justPickedRef = useRef(false) // skip search-after-select cycle
   // 픽 직후 refocus 시 onFocus의 setOpen(true)를 한 번만 무시 — 안 그러면 "결과 없음" 깜빡임
@@ -52,9 +52,9 @@ export function SymbolAutocomplete({
       return
     }
 
-    if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current)
+    if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
     setLoading(true)
-    debounceTimerRef.current = window.setTimeout(() => {
+    debounceTimerRef.current = setTimeout(() => {
       const myId = ++requestIdRef.current
       void window.api.symbols
         .search({ assetType, query: q, quoteCurrency })
@@ -69,10 +69,10 @@ export function SymbolAutocomplete({
           setSuggestions([])
           setLoading(false)
         })
-    }, DEBOUNCE_MS) as unknown as number
+    }, DEBOUNCE_MS)
 
     return () => {
-      if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current)
+      if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
     }
   }, [value, assetType, quoteCurrency, disabled])
 

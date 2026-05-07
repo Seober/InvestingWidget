@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ResizeEdge } from '@shared/schema'
 
 interface HandleSpec {
@@ -62,14 +62,18 @@ export function ResizeHandles() {
     }
   }, [])
 
-  const handleMouseDown = (edge: ResizeEdge) => (e: React.MouseEvent) => {
-    if (e.button !== 0) return
-    // preventDefault 제거 — handle 영역엔 text selection·focus 변경 같은 default action 없음.
-    // dblclick 발화 시퀀스에 미세 영향 가능성 배제 차원.
-    e.stopPropagation()
-    startedRef.current = { edge, x: e.screenX, y: e.screenY }
-    draggingRef.current = false
-  }
+  // 8개 handle div 마다 새 클로저 만들지 않도록 useCallback + edge 인자 currying.
+  const handleMouseDown = useCallback(
+    (edge: ResizeEdge) => (e: React.MouseEvent) => {
+      if (e.button !== 0) return
+      // preventDefault 제거 — handle 영역엔 text selection·focus 변경 같은 default action 없음.
+      // dblclick 발화 시퀀스에 미세 영향 가능성 배제 차원.
+      e.stopPropagation()
+      startedRef.current = { edge, x: e.screenX, y: e.screenY }
+      draggingRef.current = false
+    },
+    []
+  )
 
   return (
     <>

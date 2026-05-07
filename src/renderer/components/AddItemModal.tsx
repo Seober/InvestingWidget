@@ -135,8 +135,11 @@ export function AddItemModal({ initial, existingItems, onClose, onSubmit, templa
         source: pickedSource
       })
       if (!cancelledRef.current) onClose()
-    } catch (err: any) {
-      if (!cancelledRef.current) setError(err?.message ?? '저장 실패')
+    } catch (err: unknown) {
+      if (!cancelledRef.current) {
+        const msg = (err as { message?: string } | null)?.message ?? '저장 실패'
+        setError(msg)
+      }
     } finally {
       if (!cancelledRef.current) setSubmitting(false)
     }

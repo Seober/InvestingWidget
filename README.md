@@ -4,7 +4,7 @@ Windows 데스크톱에서 항상 위에 떠 있는 미니 위젯. 암호화폐(
 
 > **100% AI 바이브코딩 프로젝트** — 개발자가 요구사항·검수·빌드 환경을 담당하고, AI가 코드 정독·설계·구현·디버깅을 사전 승인 흐름으로 진행했습니다.
 
-> 📦 **다운로드**: [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget Setup x.y.z.exe` 받아 실행 (NSIS 마법사 진행). 자세한 설치 절차는 아래 "다운로드·설치" 섹션 참고.
+> 📦 **다운로드**: [Releases](https://github.com/Seober/InvestingWidget/releases/latest) 에서 `InvestingWidget-Setup-x.y.z.zip` 받아 압축 해제 후 안의 `.exe` 실행 (NSIS 마법사 진행). 자세한 설치 절차는 아래 "다운로드·설치" 섹션 참고.
 
 ## 주요 기능
 

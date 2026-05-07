@@ -13,8 +13,28 @@ import { BinanceAdapter, createBinancePerp, createBinanceSpot } from './binance'
 import { FinnhubAdapter } from './finnhub'
 import { TradingViewAdapter } from './tradingview'
 import { GateioAdapter, createGateioPerp, createGateioSpot } from './gateio'
+import { AdapterResolver } from './adapterResolver'
 
 const FALLBACK_TIMEOUT_MS = 5_000
+
+// adapter.subscribe 가 동기·비동기(Promise) 둘 다 반환할 수 있어 보일러플레이트 통합 헬퍼.
+// reject 또는 throw 시 onError 콜백 호출. 메시지 추출은 기존 패턴(`err?.message ?? fallback`) 보존.
+function subscribeWithErrorHandler(
+  adapter: PriceAdapter,
+  item: ItemConfig,
+  onError: (msg: string) => void
+): void {
+  const extractMsg = (err: unknown): string =>
+    (err as { message?: string } | null)?.message ?? '구독 오류'
+  try {
+    const result = adapter.subscribe(item) as unknown
+    if (result && typeof (result as Promise<unknown>).then === 'function') {
+      ;(result as Promise<unknown>).catch((err: unknown) => onError(extractMsg(err)))
+    }
+  } catch (err: unknown) {
+    onError(extractMsg(err))
+  }
+}
 
 export class PriceService extends EventEmitter {
   private binSpot: BinanceAdapter
@@ -23,6 +43,8 @@ export class PriceService extends EventEmitter {
   private gatePerp: GateioAdapter
   private finnhub: FinnhubAdapter
   private tv: TradingViewAdapter
+
+  private resolver: AdapterResolver
 
   private subscribedItemIds = new Set<string>()
   private itemTypes = new Map<string, AssetType>()
@@ -38,49 +60,19 @@ export class PriceService extends EventEmitter {
     this.tv = new TradingViewAdapter()
     this.tradingViewEnabled = config.tradingViewEnabled
 
-    for (const a of this.allAdapters()) this.wire(a)
-  }
+    this.resolver = new AdapterResolver(
+      {
+        binSpot: this.binSpot,
+        binPerp: this.binPerp,
+        gateSpot: this.gateSpot,
+        gatePerp: this.gatePerp,
+        finnhub: this.finnhub,
+        tv: this.tv
+      },
+      () => this.tradingViewEnabled
+    )
 
-  private allAdapters(): PriceAdapter[] {
-    return [this.binSpot, this.binPerp, this.gateSpot, this.gatePerp, this.finnhub, this.tv]
-  }
-
-  private adapterChain(assetType: AssetType): PriceAdapter[] {
-    switch (assetType) {
-      case 'crypto-spot':
-        return [this.binSpot, this.gateSpot]
-      case 'crypto-perp':
-        // Binance USDT-M futures is blocked from KR IPs → use Gate.io only.
-        // VPN users can edit this list to fall back to binPerp if desired.
-        return [this.gatePerp]
-      case 'stock-us':
-      case 'etf-us':
-        return [this.finnhub]
-      case 'stock-kr':
-      case 'etf-kr':
-        return this.tradingViewEnabled ? [this.tv] : []
-      default:
-        return []
-    }
-  }
-
-  private adapterById(id: SourceId): PriceAdapter | null {
-    switch (id) {
-      case 'binance-spot':
-        return this.binSpot
-      case 'binance-perp':
-        return this.binPerp
-      case 'gateio-spot':
-        return this.gateSpot
-      case 'gateio-perp':
-        return this.gatePerp
-      case 'finnhub':
-        return this.finnhub
-      case 'tradingview':
-        return this.tradingViewEnabled ? this.tv : null
-      default:
-        return null
-    }
+    for (const a of this.resolver.all()) this.wire(a)
   }
 
   setItems(items: ItemConfig[]) {
@@ -116,7 +108,7 @@ export class PriceService extends EventEmitter {
     itemDraft: Omit<ItemConfig, 'id'>,
     signal?: AbortSignal
   ): Promise<ValidateResult> {
-    const chain = this.adapterChain(itemDraft.assetType)
+    const chain = this.resolver.chainFor(itemDraft.assetType)
     if (chain.length === 0) {
       const isKr =
         itemDraft.assetType === 'stock-kr' || itemDraft.assetType === 'etf-kr'
@@ -207,25 +199,16 @@ export class PriceService extends EventEmitter {
       signal?.addEventListener('abort', onAbort)
       const timer = setTimeout(() => finish(false, `${timeoutMs}ms 내 응답 없음`), timeoutMs)
 
-      try {
-        const result = adapter.subscribe(tempItem) as unknown
-        if (result && typeof (result as Promise<unknown>).then === 'function') {
-          ;(result as Promise<unknown>).catch((err) =>
-            finish(false, err?.message ?? '구독 오류')
-          )
-        }
-      } catch (err: any) {
-        finish(false, err?.message ?? '구독 오류')
-      }
+      subscribeWithErrorHandler(adapter, tempItem, (msg) => finish(false, msg))
     })
   }
 
   async destroy() {
-    await Promise.all(this.allAdapters().map((a) => a.destroy()))
+    await Promise.all(this.resolver.all().map((a) => a.destroy()))
   }
 
   private subscribeItem(item: ItemConfig) {
-    const adapter = this.resolveAdapter(item)
+    const adapter = this.resolver.resolve(item)
     if (!adapter) {
       const isKr = item.assetType === 'stock-kr' || item.assetType === 'etf-kr'
       this.emit(
@@ -239,31 +222,15 @@ export class PriceService extends EventEmitter {
     }
     this.subscribedItemIds.add(item.id)
     this.itemTypes.set(item.id, item.assetType)
-    try {
-      const result = adapter.subscribe(item) as unknown
-      if (result && typeof (result as Promise<unknown>).then === 'function') {
-        ;(result as Promise<unknown>).catch((err) =>
-          this.emit('itemError', item.id, err?.message ?? '구독 오류')
-        )
-      }
-    } catch (err: any) {
-      this.emit('itemError', item.id, err?.message ?? '구독 오류')
-    }
+    subscribeWithErrorHandler(adapter, item, (msg) =>
+      this.emit('itemError', item.id, msg)
+    )
   }
 
   private unsubscribeItem(itemId: string) {
     this.subscribedItemIds.delete(itemId)
     this.itemTypes.delete(itemId)
-    for (const a of this.allAdapters()) a.unsubscribe(itemId)
-  }
-
-  private resolveAdapter(item: ItemConfig): PriceAdapter | null {
-    if (item.source) {
-      const a = this.adapterById(item.source)
-      if (a) return a
-    }
-    const chain = this.adapterChain(item.assetType)
-    return chain[0] ?? null
+    for (const a of this.resolver.all()) a.unsubscribe(itemId)
   }
 
   private wire(adapter: PriceAdapter) {

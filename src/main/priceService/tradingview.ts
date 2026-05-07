@@ -24,6 +24,13 @@ interface TVModule {
   Client: new () => TVClient
 }
 
+interface ItemEntry {
+  tvSymbol: string
+  client: TVClient
+  session: TVQuoteSession
+  market: TVMarketHandle
+}
+
 // Self-healing recovery: only recreates market handles that have NEVER
 // received a tick. Items that received a tick but went silent (off-hours, KR
 // market closed) are left alone — the last quote stays visible.
@@ -33,11 +40,12 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
   readonly id = 'tradingview' as const
   private currentStatus: AdapterStatus = 'closed'
   private mod: TVModule | null = null
-  private client: TVClient | null = null
-  private session: TVQuoteSession | null = null
 
-  // itemId -> { tvSymbol, market }
-  private itemHandles = new Map<string, { tvSymbol: string; market: TVMarketHandle }>()
+  // 항목별 자체 client + session + market 보유.
+  // @mathieuc/tradingview 의 알려진 버그: 같은 session 안에서 market.close() 후
+  // 새 Market 생성 시 symbolListeners 배열 stuck → quote_add_symbols 누락 → 영구 stuck.
+  // 회피책으로 항목마다 자체 client/session 분리 (KR 항목 N개 → WebSocket N개).
+  private itemHandles = new Map<string, ItemEntry>()
   // Latest data per item for re-emit on subscribe
   private lastData = new Map<string, { price: number; changePct: number }>()
   // itemId -> last tick timestamp; missing means "never received a tick"
@@ -67,24 +75,58 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
       this.emit('itemError', item.id, 'TradingView 어댑터 초기화 실패')
       return
     }
-    this.ensureSession()
-    if (!this.session) {
-      this.emit('itemError', item.id, 'TradingView 세션 생성 실패')
-      return
-    }
 
     const tvSymbol = this.toTVSymbol(item.symbol)
-    let market: TVMarketHandle
+    const entry = this.createItemEntry(item.id, tvSymbol)
+    if (!entry) return // createItemEntry 에서 이미 emit
+
+    this.itemHandles.set(item.id, entry)
+    this.setStatus('open')
+    this.ensureRecoveryTimer()
+  }
+
+  // 항목 entry 한 개 (client + session + market) 생성 + handler wire.
+  // subscribe / recreateMarket 양쪽에서 동일 패턴 사용.
+  private createItemEntry(itemId: string, tvSymbol: string): ItemEntry | null {
+    if (!this.mod) {
+      this.emit('itemError', itemId, 'TradingView 모듈 없음')
+      return null
+    }
+    let client: TVClient
+    let session: TVQuoteSession
     try {
-      market = new this.session.Market(tvSymbol)
+      client = new this.mod.Client()
+      client.on?.('error', () => {
+        // tolerated; per-item errors come through market.onError
+      })
+      client.on?.('disconnected', () => this.setStatus('reconnecting'))
+      client.on?.('connected', () => this.setStatus('open'))
+      session = new client.Session.Quote()
     } catch (err: any) {
-      this.emit('itemError', item.id, `TradingView 심볼 생성 실패: ${err?.message ?? err}`)
-      return
+      this.emit('itemError', itemId, `TradingView 세션 생성 실패: ${err?.message ?? err}`)
+      return null
     }
 
-    this.wireMarketHandlers(item.id, tvSymbol, market)
-    this.itemHandles.set(item.id, { tvSymbol, market })
-    this.ensureRecoveryTimer()
+    let market: TVMarketHandle
+    try {
+      market = new session.Market(tvSymbol)
+    } catch (err: any) {
+      try {
+        session.delete?.()
+      } catch {
+        // ignore
+      }
+      try {
+        client.end()
+      } catch {
+        // ignore
+      }
+      this.emit('itemError', itemId, `TradingView 심볼 생성 실패: ${err?.message ?? err}`)
+      return null
+    }
+
+    this.wireMarketHandlers(itemId, tvSymbol, market)
+    return { tvSymbol, client, session, market }
   }
 
   private wireMarketHandlers(itemId: string, tvSymbol: string, market: TVMarketHandle) {
@@ -123,23 +165,30 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     })
   }
 
+  // recovery — 같은 항목 entry 의 client/session 통째 재생성 (lib stuck 회피).
   private recreateMarket(itemId: string) {
     const handle = this.itemHandles.get(itemId)
-    if (!handle || !this.session) return
+    if (!handle) return
     try {
       handle.market.close()
     } catch {
       // ignore
     }
-    let market: TVMarketHandle
     try {
-      market = new this.session.Market(handle.tvSymbol)
-    } catch (err: any) {
-      this.emit('itemError', itemId, `TradingView 재구독 실패: ${err?.message ?? err}`)
-      return
+      handle.session.delete?.()
+    } catch {
+      // ignore
     }
-    this.wireMarketHandlers(itemId, handle.tvSymbol, market)
-    this.itemHandles.set(itemId, { tvSymbol: handle.tvSymbol, market })
+    try {
+      handle.client.end()
+    } catch {
+      // ignore
+    }
+    this.itemHandles.delete(itemId)
+
+    const entry = this.createItemEntry(itemId, handle.tvSymbol)
+    if (!entry) return
+    this.itemHandles.set(itemId, entry)
   }
 
   private ensureRecoveryTimer() {
@@ -172,12 +221,22 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     } catch {
       // ignore
     }
+    try {
+      h.session.delete?.()
+    } catch {
+      // ignore
+    }
+    try {
+      h.client.end()
+    } catch {
+      // ignore
+    }
     this.itemHandles.delete(itemId)
     this.lastData.delete(itemId)
     this.lastTickTs.delete(itemId)
     if (this.itemHandles.size === 0) {
       this.stopRecoveryTimer()
-      this.teardownSession()
+      this.setStatus('closed')
     }
   }
 
@@ -189,45 +248,6 @@ export class TradingViewAdapter extends EventEmitter implements PriceAdapter {
     this.destroyed = true
     this.stopRecoveryTimer()
     for (const itemId of Array.from(this.itemHandles.keys())) this.unsubscribe(itemId)
-    this.teardownSession()
-  }
-
-  private ensureSession() {
-    if (this.session || !this.mod) return
-    try {
-      this.client = new this.mod.Client()
-      this.client.on?.('error', () => {
-        // tolerated; per-item errors come through onError
-      })
-      this.client.on?.('disconnected', () => this.setStatus('reconnecting'))
-      this.client.on?.('connected', () => this.setStatus('open'))
-      this.session = new this.client.Session.Quote()
-      this.setStatus('open')
-    } catch (err: any) {
-      this.setStatus('closed', err?.message ?? String(err))
-      this.client = null
-      this.session = null
-    }
-  }
-
-  private teardownSession() {
-    if (this.session) {
-      try {
-        this.session.delete?.()
-      } catch {
-        // ignore
-      }
-      this.session = null
-    }
-    if (this.client) {
-      try {
-        this.client.end()
-      } catch {
-        // ignore
-      }
-      this.client = null
-    }
-    this.setStatus('closed')
   }
 
   private toTVSymbol(rawSymbol: string): string {

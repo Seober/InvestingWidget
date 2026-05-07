@@ -17,25 +17,29 @@
   flowchart TB
       subgraph main["fa:fa-cogs &nbsp;Main Process (Node.js)"]
           direction TB
-          ps["fa:fa-rss &nbsp;priceService<br/>adapter chain + source hint"]:::accent
+          lifecycle["AppLifecycle<br/>onReady · single-instance"]:::accent
+          ps["fa:fa-rss &nbsp;priceService<br/>adapter chain + AdapterResolver"]:::accent
           cs["configStore<br/>debounced disk write"]
           wm["windowMgr<br/>menu + modal"]
+          tray["TrayManager<br/>icon · context menu"]
+          updater["autoUpdater<br/>GitHub Releases manifest"]:::accent
 
           ps --> binance[("Binance WS")]
           ps --> gateio[("Gate.io WS")]
           ps --> finnhub[("Finnhub WS")]
           ps --> tv[("TradingView")]
+          updater --> ghrelease[("GitHub Releases<br/>latest.yml")]
       end
 
       subgraph renderer["fa:fa-desktop &nbsp;Renderer (React + Zustand)"]
           direction TB
           app["App"]:::accent
           ir["ItemRow"]
-          modals["AddItemModal / ListEditModal<br/>SettingsModal / SymbolAutocomplete"]
+          modals["AddItemModal / ListEditModal<br/>SettingsModal / SymbolAutocomplete<br/>UpdaterProgressModal"]
           app --> ir
           app --> modals
       end
 
-      main -.->|"fa:fa-exchange &nbsp;IPC via contextBridge<br/>tick / itemError / status"| renderer
+      main -.->|"fa:fa-exchange &nbsp;IPC via contextBridge<br/>tick / itemError / adapterStatus / config-changed<br/>update-progress / update-downloaded"| renderer
 
       classDef accent stroke:#B45309,color:#B45309,stroke-width:2px

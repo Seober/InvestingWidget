@@ -11,6 +11,9 @@ export function useDrag(opts: {
   const startedRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null)
   const draggingRef = useRef(false)
   const rafRef = useRef<number | null>(null)
+  // optsRef 패턴 — 콜백 identity 가 매 렌더 변해도 effect 재구독 회피.
+  // ref.current 갱신은 매 렌더 동기 적용. effect 안 핸들러는 항상 최신 콜백 호출.
+  // useEffect 가 외부 reactive value 참조 X (ref 만) → exhaustive-deps lint 자체 trigger X.
   const optsRef = useRef(opts)
   optsRef.current = opts
 

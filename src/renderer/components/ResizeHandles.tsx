@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { ResizeEdge } from '@shared/schema'
 
 interface HandleSpec {
@@ -63,7 +63,6 @@ export function ResizeHandles() {
     }
   }, [])
 
-  // 8개 handle div 마다 새 클로저 만들지 않도록 useCallback + edge 인자 currying.
   const handleMouseDown = useCallback(
     (edge: ResizeEdge) => (e: React.MouseEvent) => {
       if (e.button !== 0) return
@@ -76,16 +75,23 @@ export function ResizeHandles() {
     []
   )
 
+  // 8 handler closure 를 한 번 precompute — 매 render 시 currying 으로 새 함수 8 개 생성 회피.
+  // handleMouseDown 가 stable 이라 useMemo 는 한 번만 평가.
+  const handles = useMemo(
+    () => HANDLES.map((h) => ({ ...h, onMouseDown: handleMouseDown(h.edge) })),
+    [handleMouseDown]
+  )
+
   return (
     <>
-      {HANDLES.map(({ edge, cls, ariaLabel }) => (
+      {handles.map(({ edge, cls, ariaLabel, onMouseDown }) => (
         <div
           key={edge}
           className={`resize-handle ${cls}`}
           data-resize-edge={edge}
           role="separator"
           aria-label={ariaLabel}
-          onMouseDown={handleMouseDown(edge)}
+          onMouseDown={onMouseDown}
         />
       ))}
     </>

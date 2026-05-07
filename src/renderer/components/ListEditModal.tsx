@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AssetType, ItemConfig } from '@shared/schema'
 
 const ASSET_LABELS: Record<AssetType, string> = {
@@ -55,6 +55,12 @@ export function ListEditModal({ initialItems, onClose, onSave, onEditItem }: Pro
     setSelected(new Set())
   }
 
+  // dragover 는 ~60Hz 발화 → setItems 매번 호출 시 큰 list 에서 jank.
+  // rAF throttle: 다음 frame 까지 setItems 1 회만 (frame 안 dragover 다중 호출 합침).
+  const dragOverRafRef = useRef<number | null>(null)
+  const draggingIdxRef = useRef<number | null>(null)
+  draggingIdxRef.current = draggingIdx
+
   const onDragStart = (e: React.DragEvent, idx: number) => {
     setDraggingIdx(idx)
     e.dataTransfer.effectAllowed = 'move'
@@ -62,16 +68,29 @@ export function ListEditModal({ initialItems, onClose, onSave, onEditItem }: Pro
   }
   const onDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault()
-    if (draggingIdx === null || draggingIdx === idx) return
-    setItems((prev) => {
-      const next = [...prev]
-      const [moved] = next.splice(draggingIdx, 1)
-      next.splice(idx, 0, moved)
-      return next
+    const fromIdx = draggingIdxRef.current
+    if (fromIdx === null || fromIdx === idx) return
+    if (dragOverRafRef.current !== null) return // 이미 큐된 rAF 가 처리
+    dragOverRafRef.current = requestAnimationFrame(() => {
+      dragOverRafRef.current = null
+      const currentFrom = draggingIdxRef.current
+      if (currentFrom === null || currentFrom === idx) return
+      setItems((prev) => {
+        const next = [...prev]
+        const [moved] = next.splice(currentFrom, 1)
+        next.splice(idx, 0, moved)
+        return next
+      })
+      setDraggingIdx(idx)
     })
-    setDraggingIdx(idx)
   }
-  const onDragEnd = () => setDraggingIdx(null)
+  const onDragEnd = () => {
+    if (dragOverRafRef.current !== null) {
+      cancelAnimationFrame(dragOverRafRef.current)
+      dragOverRafRef.current = null
+    }
+    setDraggingIdx(null)
+  }
 
   const handleSave = async () => {
     setSaving(true)

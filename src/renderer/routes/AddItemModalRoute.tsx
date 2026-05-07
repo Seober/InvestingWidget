@@ -1,24 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
+import type { ItemConfig } from '@shared/schema'
 import { AddItemModal } from '../components/AddItemModal'
-import type { AppConfig, ItemConfig } from '@shared/schema'
+import { useModalConfig } from '../hooks/useModalConfig'
 
 interface Props {
   itemId?: string
 }
 
 export function AddItemModalRoute({ itemId }: Props) {
-  const [config, setConfig] = useState<AppConfig | null>(null)
-  const [initial, setInitial] = useState<ItemConfig | null>(null)
-
-  useEffect(() => {
-    void window.api.config.get().then((cfg) => {
-      setConfig(cfg)
-      if (itemId) {
-        const found = cfg.items.find((i) => i.id === itemId) ?? null
-        setInitial(found)
-      }
-    })
-  }, [itemId])
+  const config = useModalConfig()
+  // itemId 가 주어진 경우 (edit-item) 해당 항목 찾기 — config 의 items 에서 derived.
+  const initial = useMemo(() => {
+    if (!config || !itemId) return null
+    return config.items.find((i) => i.id === itemId) ?? null
+  }, [config, itemId])
 
   if (!config) return <div className="loading">로딩 중…</div>
 

@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useStore } from './store'
 import { ItemRow } from './components/ItemRow'
 import { ResizeHandles } from './components/ResizeHandles'
@@ -11,14 +12,19 @@ import { useAutofit } from './hooks/useAutofit'
 import { useEdgeResizeDblClick } from './hooks/useEdgeResizeDblClick'
 
 export function App() {
-  // zustand selector — 도메인별 분리 구독으로 부분 변경만 트리거. actions 는 stable reference.
-  const config = useStore((s) => s.config)
-  const items = useStore((s) => s.items)
-  const ticks = useStore((s) => s.ticks)
-  const setConfig = useStore((s) => s.setConfig)
-  const applyTick = useStore((s) => s.applyTick)
-  const setItemError = useStore((s) => s.setItemError)
-  const setAdapterStatus = useStore((s) => s.setAdapterStatus)
+  // shallow selector — 상태 3 슬라이스를 한 번에 구독해 별 selector 마다 re-render 회피.
+  // zustand action 들은 stable reference 라 별도 selector 로 묶어 한 번만 추출.
+  const { config, items, ticks } = useStore(
+    useShallow((s) => ({ config: s.config, items: s.items, ticks: s.ticks }))
+  )
+  const { setConfig, applyTick, setItemError, setAdapterStatus } = useStore(
+    useShallow((s) => ({
+      setConfig: s.setConfig,
+      applyTick: s.applyTick,
+      setItemError: s.setItemError,
+      setAdapterStatus: s.setAdapterStatus,
+    }))
+  )
 
   const appRef = useRef<HTMLDivElement>(null)
   const rowsRef = useRef<HTMLDivElement>(null)

@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react'
 import { SettingsModal } from '../components/SettingsModal'
-import type { AppConfig } from '@shared/schema'
+import { useModalConfig } from '../hooks/useModalConfig'
 
 export function SettingsModalRoute() {
-  const [config, setConfig] = useState<AppConfig | null>(null)
-
-  useEffect(() => {
-    void window.api.config.get().then(setConfig)
-  }, [])
+  const config = useModalConfig()
 
   if (!config) return <div className="loading">로딩 중…</div>
 

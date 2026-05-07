@@ -1,13 +1,9 @@
-import { useEffect, useState } from 'react'
+import type { ItemConfig } from '@shared/schema'
 import { ListEditModal } from '../components/ListEditModal'
-import type { AppConfig, ItemConfig } from '@shared/schema'
+import { useModalConfig } from '../hooks/useModalConfig'
 
 export function ListEditModalRoute() {
-  const [config, setConfig] = useState<AppConfig | null>(null)
-
-  useEffect(() => {
-    void window.api.config.get().then(setConfig)
-  }, [])
+  const config = useModalConfig()
 
   if (!config) return <div className="loading">로딩 중…</div>
 

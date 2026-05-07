@@ -21,7 +21,21 @@ asar: true
 win:
   icon: resources/icon.ico
   target:
-    - target: zip
+    - target: nsis
       arch:
         - x64
-publish: null
+# NSIS 인스톨러 옵션 — 마법사형 + per-user (관리자 권한 불필요).
+# 설치 경로: %LOCALAPPDATA%\Programs\InvestingWidget. 사용자가 마법사에서 변경 가능.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: InvestingWidget
+# electron-updater 가 GitHub Releases 의 latest.yml 로 새 버전 감지.
+# 빌드 시 release/latest.yml 자동 생성, gh release create 시 .exe 와 함께 첨부 필요.
+publish:
+  provider: github
+  owner: Seober
+  repo: InvestingWidget

@@ -14,7 +14,20 @@ export interface KrStockMatch {
   market: KrMarket // for TradingView prefix decision
 }
 
-function parseMatch(it: any): KrStockMatch | null {
+// Naver autocomplete item — 부분 type (검증되지 않은 외부 응답).
+// 실제 response 의 키 다수 존재하지만 사용 분만 type 화 + 모두 unknown 허용.
+interface KrAcItem {
+  code?: unknown
+  typeName?: unknown
+  marketName?: unknown
+  name?: unknown
+}
+
+interface KrAcResponse {
+  items?: unknown
+}
+
+function parseMatch(it: KrAcItem): KrStockMatch | null {
   const code = String(it?.code ?? '').toUpperCase()
   // 6자리 코드 — 순수 숫자(005930) 또는 영숫자 혼합(0023A0, 0167A0 등 신규 ETF).
   // KRX가 2024년경 도입한 알파벳 포함 코드 대응.
@@ -41,8 +54,9 @@ export async function searchKrStock(query: string, limit: number = 10): Promise<
         Accept: 'application/json',
       },
     })
-  } catch (err: any) {
-    console.warn(`[kr-resolver] network error for "${trimmed}":`, err?.message ?? err)
+  } catch (err: unknown) {
+    const msg = (err as { message?: string } | null)?.message ?? String(err)
+    console.warn(`[kr-resolver] network error for "${trimmed}":`, msg)
     return []
   }
   if (!res.ok) {
@@ -50,19 +64,19 @@ export async function searchKrStock(query: string, limit: number = 10): Promise<
     return []
   }
 
-  let data: any
+  let data: KrAcResponse
   try {
-    data = await res.json()
+    data = (await res.json()) as KrAcResponse
   } catch {
     console.warn(`[kr-resolver] JSON parse failed for "${trimmed}"`)
     return []
   }
 
   // Response shape variations: items can be flat array or [array]
-  let items: any[] = []
+  let items: KrAcItem[] = []
   if (Array.isArray(data?.items)) {
-    items = data.items
-    if (items.length > 0 && Array.isArray(items[0])) items = items[0]
+    items = data.items as KrAcItem[]
+    if (items.length > 0 && Array.isArray(items[0])) items = items[0] as KrAcItem[]
   }
 
   const out: KrStockMatch[] = []

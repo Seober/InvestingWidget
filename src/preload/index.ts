@@ -4,6 +4,7 @@ import type {
   AppConfig,
   AssetType,
   ItemConfig,
+  ResizeEdge,
   SymbolSuggestion,
   Tick,
   ValidateResult
@@ -53,6 +54,11 @@ const api = {
     start: () => ipcRenderer.send(IPC.DRAG_START),
     move: () => ipcRenderer.send(IPC.DRAG_MOVE),
     end: () => ipcRenderer.send(IPC.DRAG_END)
+  },
+  resize: {
+    start: (edge: ResizeEdge) => ipcRenderer.send(IPC.RESIZE_HANDLE_START, edge),
+    move: () => ipcRenderer.send(IPC.RESIZE_HANDLE_MOVE),
+    end: () => ipcRenderer.send(IPC.RESIZE_HANDLE_END)
   },
   window: {
     setOpacity: (value: number): Promise<number> => ipcRenderer.invoke(IPC.OPACITY_SET, value),

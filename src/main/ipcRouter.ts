@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { AppConfig, AssetType, ItemConfig, Tick } from '@shared/schema'
+import { AppConfig, AssetType, ItemConfig, ResizeEdge, Tick } from '@shared/schema'
 import { IPC } from '@shared/ipcChannels'
 import { ConfigStore } from './configStore'
 import { WindowManager } from './windowManager'
@@ -94,6 +94,10 @@ export function registerIpc(opts: {
   ipcMain.on(IPC.DRAG_START, () => wm.beginDrag())
   ipcMain.on(IPC.DRAG_MOVE, () => wm.drag())
   ipcMain.on(IPC.DRAG_END, () => wm.endDrag())
+
+  ipcMain.on(IPC.RESIZE_HANDLE_START, (_e, edge: ResizeEdge) => wm.beginEdgeResize(edge))
+  ipcMain.on(IPC.RESIZE_HANDLE_MOVE, () => wm.dragEdgeResize())
+  ipcMain.on(IPC.RESIZE_HANDLE_END, () => wm.endEdgeResize())
 
   ipcMain.on(IPC.MODAL_OPEN, (_e, payload: { kind: 'add-item' | 'edit-item' | 'settings'; itemId?: string }) => {
     const win = wm.window

@@ -2,20 +2,7 @@ import { useEffect, useRef } from 'react'
 
 const DRAG_THRESHOLD_PX = 5
 const NON_DRAG_SELECTOR =
-  '.modal-backdrop, input, select, textarea, button, .no-drag, [data-no-drag]'
-
-export const EDGE_BAND_PX = 6
-
-function isOnEdge(clientX: number, clientY: number): boolean {
-  const w = window.innerWidth
-  const h = window.innerHeight
-  return (
-    clientX < EDGE_BAND_PX ||
-    clientX > w - EDGE_BAND_PX ||
-    clientY < EDGE_BAND_PX ||
-    clientY > h - EDGE_BAND_PX
-  )
-}
+  '.modal-backdrop, input, select, textarea, button, .no-drag, [data-no-drag], .resize-handle'
 
 export function useDrag(opts: {
   onClick?: (target: EventTarget | null) => void
@@ -75,7 +62,6 @@ export function useDrag(opts: {
         return
       }
       if (e.button === 0) {
-        if (isOnEdge(e.clientX, e.clientY)) return
         optsRef.current.onClick?.(s.target)
       }
     }

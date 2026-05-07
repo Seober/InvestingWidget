@@ -16,6 +16,10 @@ export const IPC = {
   DRAG_MOVE: 'drag:move',
   DRAG_END: 'drag:end',
 
+  RESIZE_HANDLE_START: 'resize:handleStart',
+  RESIZE_HANDLE_MOVE: 'resize:handleMove',
+  RESIZE_HANDLE_END: 'resize:handleEnd',
+
   OPACITY_SET: 'opacity:set',
   ALWAYS_ON_TOP_SET: 'alwaysOnTop:set',
   AUTOSTART_SET: 'autostart:set',

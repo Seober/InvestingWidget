@@ -1,12 +1,18 @@
-import { BrowserWindow, screen } from 'electron'
+import { BrowserWindow, Rectangle, screen } from 'electron'
 import { join } from 'node:path'
 import { ConfigStore } from './configStore'
 import { iconPath } from './iconPath'
+import type { ResizeEdge } from '@shared/schema'
 
 export class WindowManager {
   private win: BrowserWindow | null = null
   private dragOffset: { dx: number; dy: number } | null = null
   private boundsSaveTimer: NodeJS.Timeout | null = null
+  private edgeResize: {
+    edge: ResizeEdge
+    startCursor: { x: number; y: number }
+    startBounds: Rectangle
+  } | null = null
 
   constructor(private config: ConfigStore) {}
 
@@ -29,7 +35,7 @@ export class WindowManager {
       frame: false,
       transparent: true,
       alwaysOnTop: cfg.window.alwaysOnTop,
-      resizable: true,
+      resizable: false,
       hasShadow: false,
       skipTaskbar: true,
       backgroundColor: '#00000000',
@@ -121,6 +127,63 @@ export class WindowManager {
 
   endDrag() {
     this.dragOffset = null
+    this.scheduleBoundsSave()
+  }
+
+  beginEdgeResize(edge: ResizeEdge) {
+    if (!this.win) return
+    this.edgeResize = {
+      edge,
+      startCursor: screen.getCursorScreenPoint(),
+      startBounds: this.win.getBounds()
+    }
+  }
+
+  dragEdgeResize() {
+    if (!this.win || !this.edgeResize) return
+    const { edge, startCursor, startBounds } = this.edgeResize
+    const cur = screen.getCursorScreenPoint()
+    const dx = cur.x - startCursor.x
+    const dy = cur.y - startCursor.y
+
+    const isLeft = edge === 'left' || edge === 'tl' || edge === 'bl'
+    const isRight = edge === 'right' || edge === 'tr' || edge === 'br'
+    const isTop = edge === 'top' || edge === 'tl' || edge === 'tr'
+    const isBottom = edge === 'bottom' || edge === 'bl' || edge === 'br'
+
+    let { x, y, width, height } = startBounds
+    if (isTop) {
+      height = startBounds.height - dy
+      y = startBounds.y + dy
+    } else if (isBottom) {
+      height = startBounds.height + dy
+    }
+    if (isLeft) {
+      width = startBounds.width - dx
+      x = startBounds.x + dx
+    } else if (isRight) {
+      width = startBounds.width + dx
+    }
+
+    if (width < 200) {
+      if (isLeft) x = startBounds.x + startBounds.width - 200
+      width = 200
+    }
+    if (height < 60) {
+      if (isTop) y = startBounds.y + startBounds.height - 60
+      height = 60
+    }
+
+    this.win.setBounds({
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height)
+    })
+  }
+
+  endEdgeResize() {
+    this.edgeResize = null
     this.scheduleBoundsSave()
   }
 

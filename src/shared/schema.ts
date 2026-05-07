@@ -113,6 +113,16 @@ export interface ValidateResult {
   error?: string
 }
 
+export type ResizeEdge =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'tl'
+  | 'tr'
+  | 'bl'
+  | 'br'
+
 export interface SymbolSuggestion {
   symbol: string // 입력 필드에 채워질 값 (예: "BTC", "AAPL", "005930")
   name: string // 표시 이름 (예: "Bitcoin", "Apple Inc.", "삼성전자")

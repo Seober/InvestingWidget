@@ -13,6 +13,7 @@ export class WindowManager {
     startCursor: { x: number; y: number }
     startBounds: Rectangle
   } | null = null
+  private alwaysOnTopReaffirmTimer: NodeJS.Timeout | null = null
 
   constructor(private config: ConfigStore) {}
 
@@ -54,8 +55,14 @@ export class WindowManager {
     this.win.on('resize', () => this.scheduleBoundsSave())
     this.win.on('move', () => this.scheduleBoundsSave())
     this.win.on('closed', () => {
+      if (this.alwaysOnTopReaffirmTimer) {
+        clearInterval(this.alwaysOnTopReaffirmTimer)
+        this.alwaysOnTopReaffirmTimer = null
+      }
       this.win = null
     })
+
+    this.startAlwaysOnTopReaffirm()
 
     if (process.env['ELECTRON_RENDERER_URL']) {
       this.win.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -189,6 +196,20 @@ export class WindowManager {
   endEdgeResize() {
     this.edgeResize = null
     this.scheduleBoundsSave()
+  }
+
+  // Windows long-idle 후 z-order 강등 복구용 60초 주기 reaffirm.
+  // SetWindowPos 1회로 비용 무시 가능. cfg.alwaysOnTop=false 면 skip.
+  private startAlwaysOnTopReaffirm() {
+    if (this.alwaysOnTopReaffirmTimer) return
+    this.alwaysOnTopReaffirmTimer = setInterval(() => {
+      if (!this.win) return
+      if (!this.config.get().window.alwaysOnTop) return
+      // modal 열려있을 때 skip — 'screen-saver' 재호출이 modal 우선권을 일시적으로
+      // 깨는 엣지 케이스 회피. modal 닫히면 다음 fire 에서 재개.
+      if (BrowserWindow.getAllWindows().length > 1) return
+      this.win.setAlwaysOnTop(true, 'screen-saver')
+    }, 60_000)
   }
 
   private scheduleBoundsSave() {

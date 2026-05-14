@@ -1,8 +1,9 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import type { ProgressInfo } from 'electron-updater'
+import type { ProgressInfo, UpdateInfo } from 'electron-updater'
 import { IPC } from '@shared/ipcChannels'
 import { t } from '@shared/i18n/messages'
+import { parseReleaseSummary, buildReleaseUrl } from '@shared/releaseNotes'
 import { openModal } from './modalWindow'
 
 // 자동 업데이트 매니저 — electron-updater 의 GitHub Releases 기반 자동 업데이트.
@@ -21,7 +22,7 @@ export class UpdaterManager {
     autoUpdater.autoInstallOnAppQuit = false
 
     autoUpdater.on('update-available', (info) => {
-      void this.onUpdateAvailable(info?.version ?? '?')
+      void this.onUpdateAvailable(info?.version ?? '?', info?.releaseNotes)
     })
     autoUpdater.on('download-progress', (progress: ProgressInfo) => {
       this.sendProgressToModal(progress)
@@ -74,20 +75,43 @@ export class UpdaterManager {
     autoUpdater.quitAndInstall(true, true)
   }
 
-  private async onUpdateAvailable(version: string): Promise<void> {
-    const choice = await this.showChoice({
-      title: t.updater.foundTitle,
-      message: t.updater.foundMessage(version),
-      detail: t.updater.downloadPrompt,
-      buttons: [t.updater.downloadButton, t.updater.laterButton],
-    })
-    if (choice !== 0) return
-    try {
-      this.openProgressModal()
-      await autoUpdater.downloadUpdate()
-    } catch (err: unknown) {
-      const msg = (err as { message?: string } | null)?.message ?? String(err)
-      this.showInfo(t.updater.error, t.updater.downloadFailed(msg))
+  private async onUpdateAvailable(
+    version: string,
+    releaseNotes: UpdateInfo['releaseNotes']
+  ): Promise<void> {
+    // release body 의 <!-- summary --> 마커 사이 3줄 요약 — 없으면 옛 prompt 로 fallback.
+    const summary = parseReleaseSummary(releaseNotes)
+    const buttons = summary
+      ? [t.updater.downloadButton, t.updater.viewBodyButton, t.updater.laterButton]
+      : [t.updater.downloadButton, t.updater.laterButton]
+
+    // while 루프 — "본문 보기" 클릭 시 GitHub 띄우고 dialog 즉시 재오픈.
+    // native dialog 는 OS 동작상 버튼 누르면 자동 닫힘 → 재오픈으로 "유지" UX 근사.
+    while (true) {
+      const choice = await this.showChoice({
+        title: t.updater.foundTitle,
+        message: t.updater.foundMessage(version),
+        detail: summary ?? t.updater.downloadPrompt,
+        buttons,
+      })
+      // choice 0 = 다운로드 (summary 유무 무관)
+      if (choice === 0) {
+        try {
+          this.openProgressModal()
+          await autoUpdater.downloadUpdate()
+        } catch (err: unknown) {
+          const msg = (err as { message?: string } | null)?.message ?? String(err)
+          this.showInfo(t.updater.error, t.updater.downloadFailed(msg))
+        }
+        return
+      }
+      // choice 1 = (summary 있을 때만) 본문 보기 — GitHub 새 탭 열고 루프 재진입
+      if (summary && choice === 1) {
+        void shell.openExternal(buildReleaseUrl(version))
+        continue
+      }
+      // 그 외 — 나중에 / cancel
+      return
     }
   }
 

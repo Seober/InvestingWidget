@@ -25,6 +25,7 @@ export const koMessages = {
     downloadPrompt: '지금 다운로드할까요? (다운로드 중에도 위젯 사용 가능)',
     downloadButton: '다운로드',
     laterButton: '나중에',
+    viewBodyButton: '본문 보기',
     downloadFailed: (msg: string) => `다운로드 실패: ${msg}`,
     downloadedTitle: '업데이트 다운로드 완료',
     downloadedMessage: (version: string) => `v${version} 다운로드가 완료되었습니다.`,

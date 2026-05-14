@@ -67,7 +67,11 @@ export class UpdaterManager {
 
   // renderer (progress modal) 에서 IPC.UPDATE_ACCEPT_INSTALL 받았을 때 호출.
   acceptInstall(): void {
-    autoUpdater.quitAndInstall()
+    // silent (/S) + force-run — 업데이트 시 마법사 UI 없이 silent install 후 위젯 자동 재실행.
+    // electron-updater 가 setup.exe 에 /S + --updated + --force-run 인자 추가 →
+    //   NSIS 가 모든 페이지 skip, installer.nsh 의 Section 들이 ${isUpdated} 가드로 바로가기 보존.
+    // 최초 설치(사용자가 setup.exe 더블클릭) 는 /S 없으므로 마법사 정상 표시.
+    autoUpdater.quitAndInstall(true, true)
   }
 
   private async onUpdateAvailable(version: string): Promise<void> {

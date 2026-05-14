@@ -44,20 +44,33 @@
 !macroend
 
 ; -- 바로가기 옵션 Section (Components 페이지에서 사용자 체크박스로 선택)
+; ${isUpdated} = setup.exe 가 --updated argv 로 실행된 경우 (electron-updater 의 update flow).
+; 업데이트 시엔 바로가기 안 건드림 — 최초 설치에서 사용자가 선택한 상태 보존.
+; per-user 설치라 INSTDIR 경로 안 바뀌므로 기존 바로가기는 stale 되지 않음.
 Section "바탕화면 바로가기" SecDesktop
+  ${if} ${isUpdated}
+    Return
+  ${endIf}
   CreateShortCut "$DESKTOP\${SHORTCUT_NAME}.lnk" "$INSTDIR\${APP_FILENAME}.exe" "" "$INSTDIR\${APP_FILENAME}.exe" 0
 SectionEnd
 
 Section "시작메뉴 바로가기" SecStartMenu
+  ${if} ${isUpdated}
+    Return
+  ${endIf}
   CreateDirectory "$SMPROGRAMS\${SHORTCUT_NAME}"
   CreateShortCut "$SMPROGRAMS\${SHORTCUT_NAME}\${SHORTCUT_NAME}.lnk" "$INSTDIR\${APP_FILENAME}.exe" "" "$INSTDIR\${APP_FILENAME}.exe" 0
 SectionEnd
 
-; -- uninstall 시 사용자가 만든 바로가기 함께 제거 + 빈 INSTDIR 폴더 정리
-; RMDir 은 default 가 empty-only 이므로 다른 파일 남아있으면 안전하게 skip.
+; -- uninstall 시 바로가기 함께 제거. 단 update flow (${isUpdated}=TRUE) 에선
+; 새 버전 install 의 SecDesktop/SecStartMenu 가 ${isUpdated} 가드로 재생성 안 하므로
+; 여기서 지우면 바로가기가 영구 사라짐 → update 시엔 바로가기 보존.
+; RMDir "$INSTDIR" 은 default empty-only 라 install 단계가 파일 채우면 그대로 둠 → update flow 에도 안전.
 !macro customUnInstall
-  Delete "$DESKTOP\${SHORTCUT_NAME}.lnk"
-  Delete "$SMPROGRAMS\${SHORTCUT_NAME}\${SHORTCUT_NAME}.lnk"
-  RMDir "$SMPROGRAMS\${SHORTCUT_NAME}"
+  ${ifNot} ${isUpdated}
+    Delete "$DESKTOP\${SHORTCUT_NAME}.lnk"
+    Delete "$SMPROGRAMS\${SHORTCUT_NAME}\${SHORTCUT_NAME}.lnk"
+    RMDir "$SMPROGRAMS\${SHORTCUT_NAME}"
+  ${endIf}
   RMDir "$INSTDIR"
 !macroend

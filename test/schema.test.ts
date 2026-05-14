@@ -4,8 +4,8 @@ import { DEFAULT_CONFIG } from '../src/shared/schema'
 import type { StatusEvent } from '../src/shared/schema'
 import { adapterFor } from '../src/shared/adapterMap'
 
-test('default config has 0.5s refresh interval', () => {
-  assert.equal(DEFAULT_CONFIG.refreshIntervalMs, 500)
+test('default config has 5s refresh interval', () => {
+  assert.equal(DEFAULT_CONFIG.refreshIntervalMs, 5000)
 })
 
 test('default config has all asset-type click-through templates', () => {

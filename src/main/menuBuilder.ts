@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, MenuItemConstructorOptions, app } from 'electron'
+import { BrowserWindow, Menu, MenuItemConstructorOptions, app, shell } from 'electron'
 import { ConfigStore } from './configStore'
 import { setAutoStart } from './autostart'
 import { WindowManager } from './windowManager'
@@ -7,10 +7,10 @@ import { UpdaterManager } from './autoUpdater'
 
 const REFRESH_PRESETS = [
   { label: '0.25초', value: 250 },
-  { label: '0.5초 (기본)', value: 500 },
+  { label: '0.5초', value: 500 },
   { label: '1초', value: 1000 },
   { label: '2초', value: 2000 },
-  { label: '5초', value: 5000 },
+  { label: '5초 (기본)', value: 5000 },
 ]
 
 export function buildContextMenuTemplate(
@@ -76,6 +76,13 @@ export function buildContextMenuTemplate(
         setAutoStart(mi.checked)
         config.updateWindow({ autoStart: mi.checked })
         onChange()
+      },
+    },
+    { type: 'separator' },
+    {
+      label: '오류 신고 및 건의',
+      click: () => {
+        void shell.openExternal('https://seober-web-portfolio.vercel.app/#contact')
       },
     },
     { type: 'separator' },

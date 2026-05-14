@@ -31,7 +31,7 @@ export function App() {
   const headerRef = useRef<HTMLDivElement>(null)
 
   useConfigSync(setConfig)
-  const addTick = useTickBuffer(config?.refreshIntervalMs ?? 500, applyTick)
+  const addTick = useTickBuffer(config?.refreshIntervalMs ?? 5000, applyTick)
   usePriceStream({
     onTick: addTick,
     onItemError: setItemError,

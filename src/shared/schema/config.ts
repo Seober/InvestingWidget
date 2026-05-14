@@ -45,7 +45,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     alwaysOnTop: true,
     autoStart: false,
   },
-  refreshIntervalMs: 500,
+  refreshIntervalMs: 5000,
   theme: 'dark',
   fontSize: 13,
   finnhubApiKey: '',

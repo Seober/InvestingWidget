@@ -65,7 +65,7 @@ class FakeConfigStore {
 
 test('set updates memory immediately (no debounce on get)', () => {
   const s = new FakeConfigStore()
-  assert.equal(s.get().refreshIntervalMs, 500)
+  assert.equal(s.get().refreshIntervalMs, 5000)
   s.set({ refreshIntervalMs: 250 })
   assert.equal(s.get().refreshIntervalMs, 250, 'memory must reflect set() result synchronously')
 })
